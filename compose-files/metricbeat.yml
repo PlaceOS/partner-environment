@@ -1,3 +1,4 @@
+
   # Gets metrics from host machine and send to elastic
   metricbeat:
     image: docker.elastic.co/beats/metricbeat-oss:${ELASTIC_VERSION:-7.6}
