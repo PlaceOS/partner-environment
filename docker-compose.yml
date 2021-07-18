@@ -1,4 +1,4 @@
-version: "3.7"
+version: "3.9"
 
 networks:
   placeos:
@@ -332,7 +332,7 @@ services:
   # Resources
 
   elastic:
-    image: blacktop/elasticsearch:${ELASTIC_VERSION:-7.10.2}
+    image: amazon/opendistro-for-elasticsearch:${ELASTIC_OD_VERSION:-1.13.2}
     restart: always
     container_name: elastic
     hostname: elastic
@@ -536,7 +536,7 @@ services:
     command: gelf://${LOGSTASH_HOST}:${LOGSTASH_PORT}
 
   kibana:
-    image: blacktop/kibana:${ELASTIC_VERSION:-7.10.2}
+    image: amazon/opendistro-for-elasticsearch-kibana:${ELASTIC_OD_VERSION:-1.13.2}
     profiles:
       - kibana
     restart: always
