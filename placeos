@@ -51,18 +51,18 @@ run_or_abort() {
     failure="${3}"
     ignore_failure="${4-"false"}"
 
-    exit_code="0"
+    exit_code=0
     if [ "${VERBOSE}" == "false" ]; then
         start_spinner "░░░ ${start}"
-        eval ". ${task} >>${logfile} 2>&1" || exit_code="$?"
+        eval "${task} >>${logfile} 2>&1" || exit_code=$?
         stop_spinner $exit_code
     else
         echo "░░░ ${start}"
-        eval ". ${task} 2>&1 | tee -a ${logfile}" || exit_code="$?"
+        eval "${task} 2>&1 | tee -a ${logfile}" || exit_code=$?
     fi
 
     if [ $ignore_failure != "true" ]; then
-        [ $exit_code -eq "0" ] || abort "${failure:-"${task} failed with ${exit_code}"}"
+        [ $exit_code -eq 0 ] || abort "${failure:-"${task} failed with ${exit_code}"}"
     fi
 }
 
