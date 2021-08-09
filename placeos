@@ -307,6 +307,7 @@ Usage: ./placeos stop [-h|--help]
 Stop the PlaceOS environment
 
 Arguments:
+    -v, --verbose           Write logs to STDOUT in addition to the log file.
     -h, --help              Display this message
 EOF
 }
@@ -319,6 +320,9 @@ stop_environment() {
         -h | --help | help)
             stop_environment__usage
             exit 0
+            ;;
+        -v | --verbose)
+            VERBOSE="true"
             ;;
         *)
             if [ -n "${command}" ]; then
