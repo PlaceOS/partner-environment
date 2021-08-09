@@ -15,6 +15,6 @@ for arg in "$@"; do
   esac
 done
 
-docker-compose pull -q
+docker-compose ${COMPOSE_FILES[@]} pull -q
 
 docker-compose ${COMPOSE_FILES[@]} up -d
