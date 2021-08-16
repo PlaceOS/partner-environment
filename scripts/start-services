@@ -6,9 +6,6 @@ COMPOSE_FILES=('-f ./docker-compose.yml')
 
 for arg in "$@"; do
   case $arg in
-  -e | --elk)
-    COMPOSE_FILES+=('-f ./compose-files/elk/docker-compose.yml')
-    ;;
   -s | --sentry)
     COMPOSE_FILES+=('-f ./compose-files/sentry/docker-compose.yml')
     ;;
