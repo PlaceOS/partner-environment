@@ -13,8 +13,8 @@
     networks:
       placeos:
     volumes:
-      - ./config/logstash/config:/config
-      - ./config/logstash/patterns:/opt/logstash/extra_patterns
+      - ${pwd}/config/logstash/config:/config
+      - ${pwd}/config/logstash/patterns:/opt/logstash/extra_patterns
     restart: always
     command: logstash -f /config
     << : *logging-env
@@ -24,7 +24,7 @@
     container_name: validate-logstash
     image: docker.elastic.co/logstash/logstash-oss:${ELASTIC_VERSION:-7.6}
     volumes:
-      - ./config/logstash/config:/config
+      - ${pwd}/config/logstash/config:/config
     command: logstash -t -f /config
 
   # Sends all container json-file logs to logstash
@@ -64,6 +64,6 @@
     container_name: curator
     image: bobrik/curator:5.7.6
     volumes:
-      - ./config/curator/action-file.yml:/action-file.yml
-      - ./config/curator/config.yml:/config.yml
+      - ${pwd}/config/curator/action-file.yml:/action-file.yml
+      - ${pwd}/config/curator/config.yml:/config.yml
     << : *logging-env
