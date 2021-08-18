@@ -252,7 +252,9 @@ start_environment() {
     echo "PLACE_EMAIL=${PLACE_EMAIL}" >${EMAIL_ENV}
     # TODO: use init check instead of writing the password.
     echo "PLACE_PASSWORD=${PLACE_PASSWORD}" >>${EMAIL_ENV}
-    
+    export PLACE_EMAIL=$PLACE_EMAIL
+    export PLACE_PASSWORD=$PLACE_PASSWORD
+
     run_or_abort \
         "${base_path}/scripts/generate-secrets" \
         "Generating secrets..." \
