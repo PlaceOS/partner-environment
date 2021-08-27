@@ -110,7 +110,6 @@ start_environment() {
     hard_reset=false
     setup_sentry=false
     enable_kibana=false
-    enable_metricbeat=false
     email_argument=""
     password_argument=""
     domain_argument=""
@@ -272,12 +271,12 @@ start_environment() {
         "Failed to generate secrets."
 
     run_or_abort \
-        "docker-compose ${PROFILES[@]} pull -q" \
-        "Pulling service images..." \
+        "docker-compose ${PROFILES} pull -q" \
+        "Pulling images..." \
         "Failed to pull images."
 
     run_or_abort \
-        "docker-compose ${PROFILES[@]} up -d" \
+        "docker-compose ${PROFILES} up -d" \
         "Bringing up services..." \
         "Failed to start services."
 
