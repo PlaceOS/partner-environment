@@ -259,7 +259,7 @@ start_environment() {
         rm -r "${base_path}/.htpasswd-kibana"
     fi
 
-    if [[ $ENABLE_ELASTIC_STACK == "true" ]] || [[ $enable_kibana == "true" ]]; then
+    if [[ $ENABLE_KIBANA == "true" ]] || [[ $enable_kibana == "true" ]]; then
       if [[ $(uname) == "Linux" ]]; then
         PROFILES+=" --profile metricbeat"
       fi
