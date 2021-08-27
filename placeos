@@ -106,7 +106,7 @@ EOF
 }
 
 start_environment() {
-    SERVICES=('')
+    PROFILES=""
     hard_reset=false
     setup_sentry=false
     enable_kibana=false
@@ -152,7 +152,7 @@ start_environment() {
             ;;
         -k | --kibana)
             enable_kibana=true
-            SERVICES+=('-k')
+            PROFILES+=" --profile kibana"
             ;;
         -v | --verbose)
             VERBOSE="true"
@@ -262,7 +262,7 @@ start_environment() {
 
     if [[ $ENABLE_ELASTIC_STACK == "true" ]] || [[ $enable_kibana == "true" ]]; then
       if [[ $(uname) == "Linux" ]]; then
-        enable_metricbeat="true"
+        PROFILES+=" --profile metricbeat"
       fi
     fi
 
@@ -272,7 +272,12 @@ start_environment() {
         "Failed to generate secrets."
 
     run_or_abort \
-        "${base_path}/scripts/start-services ${SERVICES[@]}" \
+        "docker-compose ${PROFILES[@]} pull -q" \
+        "Pulling service images..." \
+        "Failed to pull images."
+
+    run_or_abort \
+        "docker-compose ${PROFILES[@]} up -d" \
         "Bringing up services..." \
         "Failed to start services."
 

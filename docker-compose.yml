@@ -467,7 +467,7 @@ services:
     container_name: validate-logstash
     image: docker.elastic.co/logstash/logstash-oss:${ELASTIC_VERSION:-7.6}
     volumes:
-      - ${pwd}/config/logstash/config:/config
+      - ${PWD}/config/logstash/config:/config
     command: logstash -t -f /config
 
   # Sends all container json-file logs to logstash
@@ -513,8 +513,8 @@ services:
     container_name: curator
     image: bobrik/curator:5.7.6
     volumes:
-      - ${pwd}/config/curator/action-file.yml:/action-file.yml
-      - ${pwd}/config/curator/config.yml:/config.yml
+      - ${PWD}/config/curator/action-file.yml:/action-file.yml
+      - ${PWD}/config/curator/config.yml:/config.yml
     << : *logging-env
 
   # Gets metrics from host machine and send to elastic
