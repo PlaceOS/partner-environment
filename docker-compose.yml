@@ -1,4 +1,4 @@
-version: "3.7"
+version: "3.9"
 
 networks:
   placeos:
@@ -439,3 +439,103 @@ services:
         target: /data/rethinkdb_data
     environment:
       TZ: $TZ
+
+  # Aggregates logs and forwards them to Elasticsearch.
+  logstash:
+    profiles:
+      - kibana
+    image: docker.elastic.co/logstash/logstash-oss:${ELASTIC_VERSION:-7.6}
+    restart: always
+    container_name: logstash
+    hostname: logstash
+    expose:
+      - 12201/udp
+      - 5044
+    networks:
+      placeos:
+    volumes:
+      - ${PWD}/config/logstash/config:/config
+      - ${PWD}/config/logstash/patterns:/opt/logstash/extra_patterns
+    restart: always
+    command: logstash -f /config
+    << : *logging-env
+
+  # Run 'docker-compose run --rm validate-logstash-config' to quickly check the logstash config.
+  validate-logstash-config:
+    profiles:
+      - kibana
+    container_name: validate-logstash
+    image: docker.elastic.co/logstash/logstash-oss:${ELASTIC_VERSION:-7.6}
+    volumes:
+      - ${pwd}/config/logstash/config:/config
+    command: logstash -t -f /config
+
+  # Sends all container json-file logs to logstash
+  logspout:
+    profiles:
+      - kibana
+    image: vincit/logspout-gelf
+    hostname: $MONITOR_HOSTNAME
+    container_name: logspout
+    networks:
+      placeos:
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: gelf://${LOGSTASH_HOST}:${LOGSTASH_PORT}
+    restart: unless-stopped
+    << : *logging-env
+
+  kibana:
+    profiles:
+      - kibana
+    image: docker.elastic.co/kibana/kibana-oss:${ELASTIC_VERSION:-7.6}
+    restart: always
+    container_name: kibana
+    hostname: kibana
+    expose:
+      - 5601
+    networks:
+      placeos:
+    environment:
+      - NODE_OPTIONS=--max-old-space-size=200 # fixes memory leak (https://github.com/elastic/kibana/issues/5170)
+      - HTTPS_METHOD=nohttp
+      - ELASTICSEARCH_HOSTS="http://${ELASTIC_HOST}:${ELASTIC_PORT}"
+      - SERVER_BASEPATH="/${PLACE_METRICS_ROUTE}"
+      - SERVER_REWRITEBASEPATH=true
+      - SERVER_PUBLICBASEURL="https://${PLACE_DOMAIN}/${PLACE_METRICS_ROUTE}"
+    << : *logging-env
+
+  # Takes care of piling up Elasticsearch indices/logs. Can do many other things as well.
+  # Set up a cron job that runs "docker-compose run --rm curator --config /config.yml /action-file.yml" every once in a while.
+  curator:
+    profiles:
+      - kibana
+    container_name: curator
+    image: bobrik/curator:5.7.6
+    volumes:
+      - ${pwd}/config/curator/action-file.yml:/action-file.yml
+      - ${pwd}/config/curator/config.yml:/config.yml
+    << : *logging-env
+
+  # Gets metrics from host machine and send to elastic
+  metricbeat:
+    profiles:
+      - metricbeat
+    image: docker.elastic.co/beats/metricbeat-oss:${ELASTIC_VERSION:-7.6}
+    hostname: $MONITOR_HOSTNAME
+    container_name: metricbeat
+    user: root
+    networks:
+      placeos:
+    volumes:
+      - /proc:/hostfs/proc:ro
+      - /sys/fs/cgroup:/hostfs/sys/fs/cgroup:ro
+      - /:/hostfs:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ${PWD}/config/metricbeat.yml:/usr/share/metricbeat/metricbeat.yml
+    cap_add:
+      - SYS_PTRACE
+      - DAC_READ_SEARCH
+    command: ["metricbeat", "-e", "--strict.perms=false", "-system.hostfs=/hostfs", "-E", "output.elasticsearch.hosts=[$ELASTIC_HOST:$ELASTIC_PORT]"]
+    restart: unless-stopped
+    << : *logging-env

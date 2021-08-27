@@ -109,7 +109,8 @@ start_environment() {
     SERVICES=('')
     hard_reset=false
     setup_sentry=false
-    setup_kibana=false
+    enable_kibana=false
+    enable_metricbeat=false
     email_argument=""
     password_argument=""
     domain_argument=""
@@ -150,7 +151,8 @@ start_environment() {
             SERVICES+=('-s')
             ;;
         -k | --kibana)
-            setup_kibana=true
+            enable_kibana=true
+            SERVICES+=('-k')
             ;;
         -v | --verbose)
             VERBOSE="true"
@@ -248,11 +250,6 @@ start_environment() {
         echo ""
     done
 
-    # run_or_abort \
-    #     "${base_path}/scripts/metricbeat" \
-    #     "Checking Host OS..." \
-    #     "Error occurred while checking Host OS."
-
     # Write the email so as to not prompt the user again.
     echo "PLACE_EMAIL=${PLACE_EMAIL}" >"${EMAIL_ENV}"
     # TODO: use init check instead of writing the password.
@@ -263,16 +260,10 @@ start_environment() {
         rm -r "${base_path}/.htpasswd-kibana"
     fi
 
-    if [[ $ENABLE_ELASTIC_STACK == "true" ]] || [[ $setup_kibana == "true" ]]; then
-      run_or_abort \
-        "${base_path}/scripts/elastic-stack" \
-        "Enabling elastic stack services..." \
-        "Failed to enable elastic stack services."
-
-      run_or_abort \
-        "${base_path}/scripts/metricbeat" \
-        "Enabling metricbeat depending on OS..." \
-        "Failed to enable metricbeat or check OS."
+    if [[ $ENABLE_ELASTIC_STACK == "true" ]] || [[ $enable_kibana == "true" ]]; then
+      if [[ $(uname) == "Linux" ]]; then
+        enable_metricbeat="true"
+      fi
     fi
 
     run_or_abort \
