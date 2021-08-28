@@ -360,7 +360,7 @@ services:
       TZ: $TZ
 
   influxdb:
-    image: influxdb:${INFLUXDB_IMAGE_TAG:-v2.0.8}-alpine
+    image: influxdb:${INFLUXDB_IMAGE_TAG:-2.0.8}-alpine
     restart: always
     container_name: influx
     hostname: influx
