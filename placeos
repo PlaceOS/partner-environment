@@ -151,7 +151,6 @@ start_environment() {
             ;;
         -k | --kibana)
             enable_kibana=true
-            PROFILES+=" --profile kibana"
             ;;
         -v | --verbose)
             VERBOSE="true"
@@ -260,6 +259,7 @@ start_environment() {
     fi
 
     if [[ $ENABLE_KIBANA == "true" ]] || [[ $enable_kibana == "true" ]]; then
+      PROFILES+=" --profile kibana"
       if [[ $(uname) == "Linux" ]]; then
         PROFILES+=" --profile metricbeat"
       fi
@@ -344,7 +344,7 @@ stop_environment() {
     done
 
     run_or_abort \
-        "docker-compose down" \
+        "docker-compose down --remove-orphans" \
         "Tearing down PlaceOS" \
         "Failed to teardown PlaceOS"
 }
