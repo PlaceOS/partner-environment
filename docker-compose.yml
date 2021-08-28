@@ -470,7 +470,7 @@ services:
   logspout:
     profiles:
       - kibana
-    image: vincit/logspout-gelf
+    image: vincit/logspout-gelf:3.2.6-alpine
     restart: unless-stopped
     hostname: $MONITOR_HOSTNAME
     container_name: logspout
