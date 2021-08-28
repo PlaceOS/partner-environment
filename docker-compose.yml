@@ -444,7 +444,7 @@ services:
   logstash:
     profiles:
       - kibana
-    image: docker.elastic.co/logstash/logstash-oss:${ELASTIC_VERSION:-7.6}
+    image: blacktop/logstash:${ELASTIC_VERSION:-7.6}
     restart: always
     container_name: logstash
     hostname: logstash
