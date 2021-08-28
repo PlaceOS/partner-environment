@@ -324,7 +324,7 @@ services:
   # Resources
 
   elastic:
-    image: blacktop/elasticsearch:${ELASTIC_VERSION:-7.6}
+    image: amazon/opendistro-for-elasticsearch:${ELASTIC_OD_VERSION:-1.13.2}
     restart: always
     container_name: elastic
     hostname: elastic
@@ -484,7 +484,7 @@ services:
   kibana:
     profiles:
       - kibana
-    image: docker.elastic.co/kibana/kibana-oss:${ELASTIC_VERSION:-7.6}
+    image: amazon/opendistro-for-elasticsearch-kibana:${ELASTIC_OD_VERSION:-1.13.2}
     restart: always
     container_name: kibana
     hostname: kibana
