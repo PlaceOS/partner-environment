@@ -444,9 +444,9 @@ services:
 
   # Aggregates logs and forwards them to Elasticsearch.
   logstash:
+    image: blacktop/logstash:${ELASTIC_VERSION:-7.6}
     profiles:
       - kibana
-    image: blacktop/logstash:${ELASTIC_VERSION:-7.6}
     restart: always
     container_name: logstash
     hostname: logstash
@@ -463,9 +463,9 @@ services:
   # Run 'docker-compose run --rm validate-logstash-config' to quickly check the logstash config.
   validate-logstash-config:
     image: blacktop/logstash:${ELASTIC_VERSION:-7.6}
-    restart: "no"
     profiles:
       - kibana
+    restart: "no"
     container_name: validate-logstash
     volumes:
       - ${PWD}/config/logstash/config:/config
@@ -487,9 +487,9 @@ services:
     command: gelf://${LOGSTASH_HOST}:${LOGSTASH_PORT}
 
   kibana:
+    image: amazon/opendistro-for-elasticsearch-kibana:${ELASTIC_OD_VERSION:-1.13.2}
     profiles:
       - kibana
-    image: amazon/opendistro-for-elasticsearch-kibana:${ELASTIC_OD_VERSION:-1.13.2}
     restart: always
     container_name: kibana
     hostname: kibana
