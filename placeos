@@ -39,6 +39,17 @@ logfile="${base_path}/.logs/$(date +"%Y%m%d%H%M").log"
 
 COMPOSE_PROJECT_NAME=placeos
 
+# Helpers
+###################################################################################################
+
+unknown_argument() {
+    unknown_arg="${1}"
+    usage="${2}"
+    [ -n "${unknown_arg}" ] && echo -e "░░░ ${red}Unknown option:${reset} ${unknown_arg}"
+    eval "${usage}"
+    exit 1
+}
+
 abort() {
     echo -e "░░░ ${red}${1}${reset}"
     echo "░░░ Logs can be found in ${logfile}"
@@ -65,6 +76,9 @@ run_or_abort() {
         [ $exit_code -eq 0 ] || abort "${failure:-"${task} failed with ${exit_code}"}"
     fi
 }
+
+# Start
+###################################################################################################
 
 hard_reset() {
     # TODO: drop influxdb tables
@@ -160,12 +174,7 @@ start_environment() {
             exit 0
             ;;
         *)
-            if [ -n "${command}" ]; then
-                echo -e "░░░ ${red}Unknown option:${reset} ${command}"
-            else
-                start_environment__usage
-                exit 1
-            fi
+            unknown_argument "${command}" "start_environment__usage"
             ;;
         esac
     done
@@ -308,6 +317,9 @@ start_environment() {
     echo "░░░ $PLACE_EMAIL:$PLACE_PASSWORD"
 }
 
+# Stop
+###################################################################################################
+
 stop_environment__usage() {
     cat <<EOF
 Usage: ./placeos stop [-h|--help]
@@ -333,12 +345,7 @@ stop_environment() {
             VERBOSE="true"
             ;;
         *)
-            if [ -n "${command}" ]; then
-                echo -e "░░░ ${red}Unknown option:${reset} ${command}"
-            else
-                stop_environment__usage
-                exit 1
-            fi
+            unknown_argument "${command}" "stop_environment__usage"
             ;;
         esac
     done
@@ -348,6 +355,9 @@ stop_environment() {
         "Tearing down PlaceOS" \
         "Failed to teardown PlaceOS"
 }
+
+# Update
+###################################################################################################
 
 update_environment__usage() {
     cat <<EOF
@@ -370,12 +380,7 @@ update_environment() {
             exit 0
             ;;
         *)
-            if [ -n "${command}" ]; then
-                echo -e "░░░ ${red}Unknown option:${reset} ${command}"
-            else
-                update_environment__usage
-                exit 1
-            fi
+            unknown_argument "${command}" "update_environment__usage"
             ;;
         esac
     done
@@ -385,6 +390,9 @@ update_environment() {
     # Version info can be extracted from the heads of version branches in a file containing the version
     abort "Not implemented."
 }
+
+# Root Command
+###################################################################################################
 
 usage() {
     cat <<EOF
@@ -423,11 +431,6 @@ update)
     usage
     ;;
 *)
-    if [ -n "$command" ]; then
-        echo -e "░░░ ${red}Unknown command:${reset} $command"
-    else
-        usage
-        exit 1
-    fi
+    unknown_argument "${command}" "usage"
     ;;
 esac
