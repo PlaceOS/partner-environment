@@ -453,6 +453,8 @@ services:
     networks:
       placeos:
     << : *logging-env
+    depends_on:
+      - validate-logstash-config
     volumes:
       - ${PWD}/config/logstash/config:/config
       - ${PWD}/config/logstash/patterns:/opt/logstash/extra_patterns
@@ -461,6 +463,7 @@ services:
   # Run 'docker-compose run --rm validate-logstash-config' to quickly check the logstash config.
   validate-logstash-config:
     image: blacktop/logstash:${ELASTIC_VERSION:-7.6}
+    restart: "no"
     profiles:
       - kibana
     container_name: validate-logstash
