@@ -114,10 +114,10 @@ services:
     hostname: auth
     networks:
       placeos:
+    <<: *logging-env
     healthcheck:
       # TODO: Remove after placeos-1.2109.0
       test: wget --no-verbose -q --spider http://0.0.0.0:8080/auth/authority?health=true
-    <<: *logging-env
     depends_on:
       - redis
       - rethink
@@ -328,11 +328,11 @@ services:
     restart: always
     container_name: elastic
     hostname: elastic
-    healthcheck:
-      test: wget -q --no-verbose --tries=1 --spider http://localhost:9200/_cat/health
     networks:
       placeos:
     <<: *logging-env
+    healthcheck:
+      test: wget -q --no-verbose --tries=1 --spider http://localhost:9200/_cat/health
     volumes:
       - type: volume
         source: elastic-data
@@ -348,23 +348,23 @@ services:
     restart: always
     container_name: etcd
     hostname: etcd
-    healthcheck:
-      test: etcdctl endpoint health
     networks:
       placeos:
     <<: *logging-env
+    healthcheck:
+      test: etcdctl endpoint health
     environment:
       ALLOW_NONE_AUTHENTICATION: "yes"
       TZ: $TZ
 
   influxdb:
     image: quay.io/influxdb/influxdb:${INFLUXDB_IMAGE_TAG:-v2.0.7}
-    container_name: influx
     restart: always
+    container_name: influx
+    hostname: influx
     networks:
       placeos:
     <<: *logging-env
-    hostname: influx
     healthcheck:
       test: influx bucket list
     volumes:
@@ -410,11 +410,11 @@ services:
     restart: always
     container_name: redis
     hostname: redis
-    healthcheck:
-      test: redis-cli ping
     networks:
       placeos:
     <<: *logging-env
+    healthcheck:
+      test: redis-cli ping
     volumes:
       - type: volume
         source: redis-data
@@ -427,12 +427,12 @@ services:
     restart: always
     container_name: rethink
     hostname: rethink
-    healthcheck:
-      # Check if the DB's port is open
-      test: "bash -c ': &>/dev/null </dev/tcp/127.0.0.1/28015'"
     networks:
       placeos:
     <<: *logging-env
+    healthcheck:
+      # Check if the DB's port is open
+      test: "bash -c ': &>/dev/null </dev/tcp/127.0.0.1/28015'"
     volumes:
       - type: volume
         source: rethink-data
@@ -448,17 +448,13 @@ services:
     restart: always
     container_name: logstash
     hostname: logstash
-    expose:
-      - 12201/udp
-      - 5044
     networks:
       placeos:
+    << : *logging-env
     volumes:
       - ${PWD}/config/logstash/config:/config
       - ${PWD}/config/logstash/patterns:/opt/logstash/extra_patterns
-    restart: always
     command: logstash -f /config
-    << : *logging-env
 
   # Run 'docker-compose run --rm validate-logstash-config' to quickly check the logstash config.
   validate-logstash-config:
@@ -475,15 +471,15 @@ services:
     profiles:
       - kibana
     image: vincit/logspout-gelf
+    restart: unless-stopped
     hostname: $MONITOR_HOSTNAME
     container_name: logspout
     networks:
       placeos:
+    << : *logging-env
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     command: gelf://${LOGSTASH_HOST}:${LOGSTASH_PORT}
-    restart: unless-stopped
-    << : *logging-env
 
   kibana:
     profiles:
@@ -492,10 +488,9 @@ services:
     restart: always
     container_name: kibana
     hostname: kibana
-    expose:
-      - 5601
     networks:
       placeos:
+    << : *logging-env
     environment:
       - NODE_OPTIONS=--max-old-space-size=200 # fixes memory leak (https://github.com/elastic/kibana/issues/5170)
       - HTTPS_METHOD=nohttp
@@ -503,30 +498,33 @@ services:
       - SERVER_BASEPATH="/${PLACE_METRICS_ROUTE}"
       - SERVER_REWRITEBASEPATH=true
       - SERVER_PUBLICBASEURL="https://${PLACE_DOMAIN}/${PLACE_METRICS_ROUTE}"
-    << : *logging-env
 
   # Takes care of piling up Elasticsearch indices/logs. Can do many other things as well.
   # Set up a cron job that runs "docker-compose run --rm curator --config /config.yml /action-file.yml" every once in a while.
   curator:
     profiles:
       - kibana
-    container_name: curator
     image: bobrik/curator:5.7.6
+    container_name: curator
+    hostname: curator
+    << : *logging-env
     volumes:
       - ${PWD}/config/curator/action-file.yml:/action-file.yml
       - ${PWD}/config/curator/config.yml:/config.yml
-    << : *logging-env
 
   # Gets metrics from host machine and send to elastic
   metricbeat:
     profiles:
       - metricbeat
     image: docker.elastic.co/beats/metricbeat-oss:${ELASTIC_VERSION:-7.6}
+    restart: unless-stopped
     hostname: $MONITOR_HOSTNAME
     container_name: metricbeat
+    hostname: metricbeat
     user: root
     networks:
       placeos:
+    << : *logging-env
     volumes:
       - /proc:/hostfs/proc:ro
       - /sys/fs/cgroup:/hostfs/sys/fs/cgroup:ro
@@ -537,5 +535,3 @@ services:
       - SYS_PTRACE
       - DAC_READ_SEARCH
     command: ["metricbeat", "-e", "--strict.perms=false", "-system.hostfs=/hostfs", "-E", "output.elasticsearch.hosts=[$ELASTIC_HOST:$ELASTIC_PORT]"]
-    restart: unless-stopped
-    << : *logging-env
