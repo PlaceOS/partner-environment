@@ -34,6 +34,8 @@ x-jwt-public: &jwt-public .env.public_key
 x-jwt-secret: &jwt-secret .env.secret_key
 
 x-elastic-client-env: &elastic-client-env
+  ELASTIC_HOST: ${ELASTIC_HOST:-elastic}
+  ELASTIC_PORT: ${ELASTIC_PORT:-9200}
   ES_HOST: ${ELASTIC_HOST:-elastic}
   ES_PORT: ${ELASTIC_PORT:-9200}
 
@@ -467,6 +469,8 @@ services:
       - kibana
     restart: "no"
     container_name: validate-logstash
+    networks:
+      placeos:
     volumes:
       - ${PWD}/config/logstash/config:/config
     command: logstash -t -f /config
@@ -477,8 +481,8 @@ services:
     profiles:
       - kibana
     restart: unless-stopped
-    hostname: $MONITOR_HOSTNAME
     container_name: logspout
+    hostname: logspout
     networks:
       placeos:
     << : *logging-env
@@ -497,12 +501,13 @@ services:
       placeos:
     << : *logging-env
     environment:
-      - NODE_OPTIONS=--max-old-space-size=200 # fixes memory leak (https://github.com/elastic/kibana/issues/5170)
-      - HTTPS_METHOD=nohttp
-      - ELASTICSEARCH_HOSTS="http://${ELASTIC_HOST}:${ELASTIC_PORT}"
-      - SERVER_BASEPATH="/${PLACE_METRICS_ROUTE}"
-      - SERVER_REWRITEBASEPATH=true
-      - SERVER_PUBLICBASEURL="https://${PLACE_DOMAIN}/${PLACE_METRICS_ROUTE}"
+      <<: *elastic-client-env
+      NODE_OPTIONS: "--max-old-space-size=200" # fixes memory leak (https://github.com/elastic/kibana/issues/5170)
+      HTTPS_METHOD: "nohttp"
+      ELASTICSEARCH_HOSTS: "http://${ELASTIC_HOST}:${ELASTIC_PORT}"
+      SERVER_BASEPATH: "/${PLACE_METRICS_ROUTE}"
+      SERVER_REWRITEBASEPATH: "true"
+      SERVER_PUBLICBASEURL: "https://${PLACE_DOMAIN}/${PLACE_METRICS_ROUTE}"
 
   # Takes care of piling up Elasticsearch indices/logs. Can do many other things as well.
   # Set up a cron job that runs "docker-compose run --rm curator --config /config.yml /action-file.yml" every once in a while.
@@ -512,6 +517,8 @@ services:
       - kibana
     container_name: curator
     hostname: curator
+    networks:
+      placeos:
     << : *logging-env
     volumes:
       - ${PWD}/config/curator/action-file.yml:/action-file.yml
@@ -523,13 +530,14 @@ services:
     profiles:
       - metricbeat
     restart: unless-stopped
-    hostname: $MONITOR_HOSTNAME
     container_name: metricbeat
     hostname: metricbeat
     user: root
     networks:
       placeos:
     << : *logging-env
+    environment:
+      <<: *elastic-client-env
     volumes:
       - /proc:/hostfs/proc:ro
       - /sys/fs/cgroup:/hostfs/sys/fs/cgroup:ro
