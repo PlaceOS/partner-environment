@@ -69,7 +69,7 @@ x-smtp-client-env: &smtp-client-env
   SMTP_PASS: ${SMTP_PASS:-} # password if required
   SMTP_SECURE: ${SMTP_SECURE:-} # blank for unsecure, `SMTPS` for TLS, `STARTTLS` for negotiating TLS on unsecure connection
 
-x-logging-env: &logging-env
+x-logging: &std-logging
   logging:
     driver: json-file
     options:
@@ -85,7 +85,7 @@ services:
     hostname: api
     networks:
       placeos:
-    <<: *logging-env
+    <<: *std-logging
     depends_on:
       - auth
       - elastic
@@ -114,7 +114,7 @@ services:
     hostname: auth
     networks:
       placeos:
-    <<: *logging-env
+    <<: *std-logging
     depends_on:
       - redis
       - rethink
@@ -133,7 +133,7 @@ services:
     hostname: core
     networks:
       placeos:
-    <<: *logging-env
+    <<: *std-logging
     depends_on:
       - etcd
       - redis
@@ -158,7 +158,7 @@ services:
     hostname: edge
     networks:
       placeos:
-    <<: *logging-env
+    <<: *std-logging
     depends_on:
       - core
     environment:
@@ -172,7 +172,7 @@ services:
     hostname: frontends
     networks:
       placeos:
-    <<: *logging-env
+    <<: *std-logging
     volumes:
       - type: volume
         source: www
@@ -191,7 +191,7 @@ services:
     container_name: source
     networks:
       placeos:
-    <<: *logging-env
+    <<: *std-logging
     depends_on:
       - influxdb
       - redis
@@ -213,7 +213,7 @@ services:
     hostname: triggers
     networks:
       placeos:
-    <<: *logging-env
+    <<: *std-logging
     depends_on:
       - core
       - etcd
@@ -234,7 +234,7 @@ services:
     restart: unless-stopped
     networks:
       placeos:
-    <<: *logging-env
+    <<: *std-logging
     volumes:
       - postgres-data:/var/lib/postgresql/data
     environment:
@@ -248,7 +248,7 @@ services:
     restart: unless-stopped
     networks:
       placeos:
-    <<: *logging-env
+    <<: *std-logging
     depends_on:
       - api
       - postgres
@@ -270,7 +270,7 @@ services:
     restart: on-failure
     networks:
       placeos:
-    <<: *logging-env
+    <<: *std-logging
     depends_on:
       - rethink
       - rubber-soul
@@ -296,7 +296,7 @@ services:
     hostname: rubber-soul
     networks:
       placeos:
-    <<: *logging-env
+    <<: *std-logging
     depends_on:
       - elastic
       - rethink
@@ -314,7 +314,7 @@ services:
     hostname: dispatch
     networks:
       placeos:
-    <<: *logging-env
+    <<: *std-logging
     environment:
       SERVER_SECRET: ${PLACE_SERVER_SECRET:-development}
 
@@ -329,7 +329,7 @@ services:
       test: wget -q --no-verbose --tries=1 --spider http://localhost:9200/_cat/health
     networks:
       placeos:
-    <<: *logging-env
+    <<: *std-logging
     volumes:
       - type: volume
         source: elastic-data
@@ -349,7 +349,7 @@ services:
       test: etcdctl endpoint health
     networks:
       placeos:
-    <<: *logging-env
+    <<: *std-logging
     environment:
       ALLOW_NONE_AUTHENTICATION: "yes"
       TZ: $TZ
@@ -360,7 +360,7 @@ services:
     restart: always
     networks:
       placeos:
-    <<: *logging-env
+    <<: *std-logging
     hostname: influx
     healthcheck:
       test: influx bucket list
@@ -380,7 +380,7 @@ services:
       - 8443:443
     networks:
       placeos:
-    <<: *logging-env
+    <<: *std-logging
     depends_on:
       - api
       - auth
@@ -411,7 +411,7 @@ services:
       test: redis-cli ping
     networks:
       placeos:
-    <<: *logging-env
+    <<: *std-logging
     volumes:
       - type: volume
         source: redis-data
@@ -429,7 +429,7 @@ services:
       test: "bash -c ': &>/dev/null </dev/tcp/127.0.0.1/28015'"
     networks:
       placeos:
-    <<: *logging-env
+    <<: *std-logging
     volumes:
       - type: volume
         source: rethink-data
