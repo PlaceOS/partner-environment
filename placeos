@@ -186,6 +186,10 @@ start_environment() {
       PLACE_NGINX_TAG="staff-api"
     fi
 
+    if [[ $PLACEOS_TAG < "placeos-1.2109.0" ]]; then
+      PLACE_FRONTEND_LOADER_IMAGE="frontends"
+    fi
+
     echo "░░░ Starting PlaceOS <${PLACEOS_TAG}>"
     [ $VERBOSE == "false" ] && echo "░░░ For detailed logging, run \`tail -f ${logfile}\`"
 

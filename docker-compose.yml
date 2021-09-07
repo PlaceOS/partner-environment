@@ -49,7 +49,7 @@ x-influxdb-client-env: &influxdb-client-env
   INFLUX_ORG: ${INFLUX_ORG:-PlaceOS}
 
 x-place-loader-client-env: &place-loader-client-env
-  PLACE_LOADER_URI: ${PLACE_LOADER_URI:-http://frontends:3000}
+  PLACE_LOADER_URI: ${PLACE_LOADER_URI:-http://frontend-loader:3000}
 
 x-redis-client-env: &redis-client-env
   REDIS_URL: ${REDIS_URL:-redis://redis:6379}
@@ -165,11 +165,11 @@ services:
       <<: *edge-env
       <<: *deployment-env
 
-  frontends: # Frontend deployment service
-    image: placeos/frontends:${PLACE_FRONTENDS_TAG:-latest}
+  frontend-loader: # Frontend deployment service
+    image: placeos/${PLACE_FRONTEND_LOADER_IMAGE:-frontend-loader}:${PLACE_FRONTEND_LOADER_TAG:-latest}
     restart: always
-    container_name: frontends
-    hostname: frontends
+    container_name: frontend-loader
+    hostname: frontend-loader
     networks:
       placeos:
     <<: *std-logging
