@@ -112,7 +112,6 @@ Arguments:
     --password PASSWORD     Password for created admin account. [default: development]
     --domain DOMAIN         Domain to configure. [default: localhost:8443]
     --application APP       Application to configure. [default: backoffice]
-    -s, --sentry            Set-up Sentry.
     -k, --kibana            Set-up Kibana and Elastic stack.
     -v, --verbose           Write logs to STDOUT in addition to the log file.
     -h, --help              Display this message.
@@ -122,7 +121,6 @@ EOF
 start_environment() {
     PROFILES=""
     hard_reset=false
-    setup_sentry=false
     enable_kibana=false
     email_argument=""
     password_argument=""
@@ -158,10 +156,6 @@ start_environment() {
         --application)
             application_arguement="${1}"
             shift
-            ;;
-        -s | --sentry)
-            setup_sentry=true
-            SERVICES+=('-s')
             ;;
         -k | --kibana)
             enable_kibana=true
@@ -305,18 +299,6 @@ start_environment() {
         "${base_path}/scripts/init-influxdb" \
         "Configuring InfluxDB..." \
         "Failed to configure InfluxDB."
-
-    if [[ $setup_sentry == "true" ]]; then
-        run_or_abort \
-            "${base_path}/scripts/setup-sentry.sh" \
-            "Setting up sentry..." \
-            "Failed to setup sentry"
-
-        echo "░░░ Sentry setup complete. Login to http://$PLACE_DOMAIN on port 8989 with..."
-        echo "░░░ ${PLACE_EMAIL}:${PLACE_PASSWORD}"
-    else
-        echo "░░░ To setup Sentry, run \`${base_path}/placeos start -s\`"
-    fi
 
     [ ${hard_reset} == "true" ] && hard_reset
 
