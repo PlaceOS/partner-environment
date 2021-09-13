@@ -451,7 +451,7 @@ services:
     hostname: logstash
     networks:
       placeos:
-    << : *logging-env
+    << : *std-logging
     depends_on:
       - validate-logstash-config
     volumes:
@@ -482,7 +482,7 @@ services:
     hostname: logspout
     networks:
       placeos:
-    << : *logging-env
+    << : *std-logging
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     command: gelf://${LOGSTASH_HOST}:${LOGSTASH_PORT}
@@ -496,7 +496,7 @@ services:
     hostname: kibana
     networks:
       placeos:
-    << : *logging-env
+    << : *std-logging
     environment:
       <<: *elastic-client-env
       NODE_OPTIONS: "--max-old-space-size=200" # fixes memory leak (https://github.com/elastic/kibana/issues/5170)
@@ -516,7 +516,7 @@ services:
     hostname: curator
     networks:
       placeos:
-    << : *logging-env
+    << : *std-logging
     volumes:
       - ${PWD}/config/curator/action-file.yml:/action-file.yml
       - ${PWD}/config/curator/config.yml:/config.yml
@@ -532,7 +532,7 @@ services:
     user: root
     networks:
       placeos:
-    << : *logging-env
+    << : *std-logging
     environment:
       <<: *elastic-client-env
     volumes:
