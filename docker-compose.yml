@@ -97,7 +97,7 @@ services:
       - etcd
       - redis
       - rethink
-      - *search-ingest-service
+      - search-ingest
     env_file:
       - *jwt-public
       - *jwt-secret
@@ -287,7 +287,7 @@ services:
     <<: *std-logging
     depends_on:
       - rethink
-      - *search-ingest-service
+      - search-ingest
     env_file:
       - *server-secret
     environment:
