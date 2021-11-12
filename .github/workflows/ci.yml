@@ -19,6 +19,7 @@ jobs:
           - placeos-1.2108.4
           - placeos-1.2109.1
           - placeos-1.2111.0
+          - placeos-1.2111.1
         include:
           - version: nightly
             stable: false
