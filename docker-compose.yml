@@ -386,7 +386,7 @@ services:
     command: "--reporting-disabled"
     
   chronograf:
-    image: chronograf:1.9
+    image: chronograf:${CHRONOGRAF_IMAGE_TAG:-1.9}
     container_name: chronograf
     restart: always
     networks:
@@ -408,6 +408,18 @@ services:
       GENERIC_NAME: "PlaceOS"
       PUBLIC_URL: "https://${PLACE_DOMAIN}"
 
+  mosquitto:
+    image: iegomez/mosquitto-go-auth:${MOSQUITTO_IMAGE_TAG:-latest}
+    restart: always
+    container_name: mosquitto
+    hostname: mosquitto
+    networks:
+      placeos:
+    volumes:
+      - ${PWD}/config/mosquitto/mosquitto.conf:/etc/mosquitto/mosquitto.conf
+    environment:
+      TZ: $TZ
+    << : *logging-env
 
   nginx:
     image: placeos/nginx:${PLACE_NGINX_TAG:-nightly}
