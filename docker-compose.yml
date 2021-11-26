@@ -384,7 +384,7 @@ services:
         source: influx-data
         target: /var/lib/influxdb2
     command: "--reporting-disabled"
-    
+
   chronograf:
     image: chronograf:1.9
     container_name: chronograf
@@ -407,7 +407,6 @@ services:
       GENERIC_SCOPES: "public"
       GENERIC_NAME: "PlaceOS"
       PUBLIC_URL: "https://${PLACE_DOMAIN}"
-
 
   nginx:
     image: placeos/nginx:${PLACE_NGINX_TAG:-nightly}
