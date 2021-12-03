@@ -126,7 +126,8 @@ services:
     environment:
       <<: *rethinkdb-client-env
       <<: *redis-client-env
-      COAUTH_NO_SSL: "true"
+      RAILS_ENV: production
+      COAUTH_NO_SSL: "false"
       TZ: $TZ
 
   core: # Module coordinator
