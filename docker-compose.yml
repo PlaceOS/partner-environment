@@ -417,6 +417,7 @@ services:
     hostname: mosquitto
     networks:
       placeos:
+    <<: *std-logging
     volumes:
       - ${PWD}/config/mosquitto/mosquitto.conf:/etc/mosquitto/mosquitto.conf
     environment:
