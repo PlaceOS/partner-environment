@@ -128,6 +128,7 @@ services:
       <<: *redis-client-env
       COAUTH_NO_SSL: "true"
       TZ: $TZ
+      PLACE_URI: https://${PLACE_DOMAIN:-localhost:8443}
 
   core: # Module coordinator
     image: placeos/core:${PLACE_CORE_TAG:-nightly}
@@ -370,7 +371,7 @@ services:
       TZ: $TZ
 
   influxdb:
-    image: influxdb:${INFLUXDB_IMAGE_TAG:-2.0-alpine}
+    image: influxdb:${INFLUXDB_IMAGE_TAG:-2.0.8-alpine}
     container_name: influx
     restart: always
     networks:
@@ -382,7 +383,7 @@ services:
     volumes:
       - type: volume
         source: influx-data
-        target: /var/lib/influxdb2
+        target: /root/.influxdbv2
     command: "--reporting-disabled"
     
   chronograf:
