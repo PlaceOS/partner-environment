@@ -1,8 +1,11 @@
 name: CI
-on: push
+on:
+  push:
+  schedule:
+    - cron: "0 15 * * 1-5"
 jobs:
   test:
-    name: "placeos: ${{ matrix.version != '' && matrix.version || 'empty'}}, os: ${{ matrix.os }}, stable: ${{ matrix.stable }}"
+    name: "${{ !matrix.stable && '🚧 ' || '' }}version: ${{ matrix.version != '' && matrix.version || 'empty'}}, os: ${{ matrix.os }}"
     runs-on: ${{ matrix.os }}
     continue-on-error: ${{ !matrix.stable }}
     strategy:
@@ -13,12 +16,11 @@ jobs:
           - ubuntu-18.04
           - ubuntu-latest
         version:
-          - "" # Test empty tag
-          - placeos-1.2105.3
-          - placeos-1.2107.4
-          - placeos-1.2108.4
-          - placeos-1.2109.0
-          - placeos-1.2109.1
+          - "" # Test an empty tag
+          - placeos-1.2112.0
+          - placeos-1.2201.1
+          - placeos-1.2202.2
+          - placeos-1.2203.1
         include:
           - version: nightly
             stable: false
@@ -43,6 +45,7 @@ jobs:
         env:
           PLACE_EMAIL: robot@place.tech
           PLACE_PASSWORD: development
+          ETCD_VERSION: 3.5.1
       - name: Upload logs
         if: ${{ failure() }}
         uses: actions/upload-artifact@v2

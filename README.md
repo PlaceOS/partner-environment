@@ -19,6 +19,12 @@ When finished dev work for the day, stop the containers with `./placeos stop`
 1. Navigate to https://localhost:8443/backoffice
 1. Login with the credentials output by the CLI
 
+### MacOS
+
+If using [Docker Desktop for Mac](https://docs.docker.com/desktop/mac/install/), the default memory allocation of 2GB is insufficient for
+running elasticsearch in addition to the set of PlaceOS services.
+Bumping the resource limit to 4GB should be sufficient.
+
 ## Configuration
 
 - `PLACE_EMAIL`,`PLACE_PASSWORD`: Create an initial admin user via these environment variables
@@ -83,6 +89,18 @@ Stop the PlaceOS environment
 Arguments:
     -v, --verbose           Write logs to STDOUT in addition to the log file.
     -h, --help              Display this message
+```
+
+### `$ ./placeos task`
+
+```shell-session
+Usage: ./placeos task [-h|--help|help] [-t|--task] <task> [help|...] [arguments...]
+
+Run a task in the PlaceOS environment.
+
+Arguments:
+    -h, --help              Display this message
+    -t, ---tasks            Display list of available tasks
 ```
 
 ## Drivers

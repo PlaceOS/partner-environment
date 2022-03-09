@@ -29,9 +29,9 @@ x-edge-env: &edge-env
   PLACE_EDGE_SECRET: ${PLACE_EDGE_SECRET:-}
   PLACE_URI: ${PLACE_URI:-http://api:3000}
 
-x-jwt-public: &jwt-public .env.public_key
+x-jwt-public-key-env: &jwt-public-key-env .env.public_key
 
-x-jwt-secret: &jwt-secret .env.secret_key
+x-secret-key-env: &secret-key-env .env.secret_key
 
 x-elastic-client-env: &elastic-client-env
   ELASTIC_HOST: ${ELASTIC_HOST:-elastic}
@@ -61,8 +61,11 @@ x-rethinkdb-client-env: &rethinkdb-client-env
   RETHINKDB_PORT: ${RETHINKDB_PORT:-28015}
   RETHINKDB_DB: ${RETHINKDB_DB:-place_development}
 
-x-rubber-soul-client-env: &rubber-soul-client-env
+x-search-ingest-client-env: &search-ingest-client-env
+  PLACE_SEARCH_INGEST_URI: ${PLACE_SEARCH_INGEST_URI:-http://search-ingest:3000}
   RUBBER_SOUL_URI: ${RUBBER_SOUL_URI:-http://rubber-soul:3000}
+
+x-search-ingest-service: &search-ingest-service ${PLACE_SEARCH_INGEST_IMAGE:-search-ingest}
 
 x-smtp-client-env: &smtp-client-env
   SMTP_SERVER: ${SMTP_SERVER:-}
@@ -70,6 +73,10 @@ x-smtp-client-env: &smtp-client-env
   SMTP_USER: ${SMTP_USER:-} # username if required, will not authenticate if blank
   SMTP_PASS: ${SMTP_PASS:-} # password if required
   SMTP_SECURE: ${SMTP_SECURE:-} # blank for unsecure, `SMTPS` for TLS, `STARTTLS` for negotiating TLS on unsecure connection
+
+x-network: &std-network
+  networks:
+    placeos:
 
 x-logging: &std-logging
   logging:
@@ -81,12 +88,11 @@ services:
   # Services
 
   api: # Rest API
-    image: placeos/rest-api:${PLACE_REST_API_TAG:-latest}
+    image: placeos/rest-api:${PLACE_REST_API_TAG:-nightly}
     restart: always
     container_name: api
     hostname: api
-    networks:
-      placeos:
+    <<: *std-network
     <<: *std-logging
     depends_on:
       - auth
@@ -94,12 +100,11 @@ services:
       - etcd
       - redis
       - rethink
-      - rubber-soul
+      - search-ingest
     env_file:
-      - *jwt-public
-      - *jwt-secret
+      - *jwt-public-key-env
+      - *secret-key-env
     environment:
-      # Environment
       <<: *deployment-env
       # Service Hosts
       <<: *elastic-client-env
@@ -107,73 +112,71 @@ services:
       <<: *place-loader-client-env
       <<: *redis-client-env
       <<: *rethinkdb-client-env
-      <<: *rubber-soul-client-env
+      <<: *search-ingest-client-env
 
   auth: # Authentication Service
-    image: placeos/auth:${PLACE_AUTH_TAG:-latest}
+    image: placeos/auth:${PLACE_AUTH_TAG:-nightly}
     restart: always
     container_name: auth
     hostname: auth
-    networks:
-      placeos:
+    <<: *std-network
     <<: *std-logging
     depends_on:
       - redis
       - rethink
     env_file:
-      - *jwt-secret
+      - *secret-key-env
     environment:
       <<: *rethinkdb-client-env
       <<: *redis-client-env
       COAUTH_NO_SSL: "true"
       TZ: $TZ
+      PLACE_URI: https://${PLACE_DOMAIN:-localhost:8443}
 
   core: # Module coordinator
-    image: placeos/core:${PLACE_CORE_TAG:-latest}
+    image: placeos/core:${PLACE_CORE_TAG:-nightly}
     restart: always
     container_name: core
     hostname: core
-    networks:
-      placeos:
+    <<: *std-network
     <<: *std-logging
     depends_on:
       - etcd
       - redis
       - rethink
+    env_file:
+      - *secret-key-env
     ulimits:
       nofile: 40000
       core:
         soft: 0
         hard: 0
     environment:
+      <<: *deployment-env
       # Service Hosts
       <<: *etcd-client-env
       <<: *redis-client-env
       <<: *rethinkdb-client-env
-      # Environment
-      <<: *deployment-env
 
   edge: # Module coordinator
-    image: placeos/edge:${PLACE_EDGE_TAG:-latest}
+    image: placeos/edge:${PLACE_EDGE_TAG:-nightly}
     restart: "no"
     container_name: edge
     hostname: edge
-    networks:
-      placeos:
+    <<: *std-network
     <<: *std-logging
     depends_on:
       - core
     environment:
-      <<: *edge-env
       <<: *deployment-env
+      <<: *edge-env
 
   frontend-loader: # Frontend deployment service
-    image: placeos/${PLACE_FRONTEND_LOADER_IMAGE:-frontend-loader}:${PLACE_FRONTEND_LOADER_TAG:-latest}
+    image: placeos/${PLACE_FRONTEND_LOADER_IMAGE:-frontend-loader}:${PLACE_FRONTEND_LOADER_TAG:-nightly}
     restart: always
     container_name: frontend-loader
     hostname: frontend-loader
-    networks:
-      placeos:
+    <<: *std-network
     <<: *std-logging
     volumes:
       - type: volume
@@ -181,18 +184,19 @@ services:
         target: /app/www
     depends_on:
       - rethink
+    env_file:
+      - *secret-key-env
     environment:
-      PLACE_LOADER_WWW: www
-      <<: *rethinkdb-client-env
-      # Environment
       <<: *deployment-env
+        # Service Hosts
+      <<: *rethinkdb-client-env
+      PLACE_LOADER_WWW: www
 
   source:
-    image: placeos/source:${PLACE_SOURCE_TAG:-latest}
+    image: docker.io/placeos/source:${PLACE_SOURCE_TAG:-nightly}
     restart: always
     container_name: source
-    networks:
-      placeos:
+    <<: *std-network
     <<: *std-logging
     depends_on:
       - influxdb
@@ -200,43 +204,42 @@ services:
       - rethink
     env_file:
       - *influxdb-api-key
+      - *secret-key-env
     environment:
+      <<: *deployment-env
       # Service Hosts
       <<: *influxdb-client-env
       <<: *redis-client-env
       <<: *rethinkdb-client-env
-      # Environment
-      <<: *deployment-env
 
   triggers: # Conditional execution service
-    image: placeos/triggers:${PLACE_TRIGGERS_TAG:-latest}
+    image: placeos/triggers:${PLACE_TRIGGERS_TAG:-nightly}
     restart: always
     container_name: triggers
     hostname: triggers
-    networks:
-      placeos:
+    <<: *std-network
     <<: *std-logging
     depends_on:
       - core
       - etcd
       - redis
       - rethink
+    env_file:
+      - *secret-key-env
     environment:
+      <<: *deployment-env
       # Service Hosts
       <<: *etcd-client-env
       <<: *redis-client-env
       <<: *rethinkdb-client-env
       <<: *smtp-client-env
-      # Environment
-      <<: *deployment-env
 
   postgres: # Database used by Staff API
     image: postgres:${POSTGRES_VERSION:-13-alpine}
     container_name: postgres
     hostname: postgres
     restart: unless-stopped
-    networks:
-      placeos:
+    <<: *std-network
     <<: *std-logging
     volumes:
       - postgres-data:/var/lib/postgresql/data
@@ -246,20 +249,20 @@ services:
       POSTGRES_PASSWORD: $POSTGRES_PASSWORD
 
   staff: # Staff API
-    image: placeos/staff-api:${PLACE_STAFF_API_TAG:-latest}
+    image: placeos/staff-api:${PLACE_STAFF_API_TAG:-nightly}
     container_name: staff
     hostname: staff
     restart: unless-stopped
-    networks:
-      placeos:
+    <<: *std-network
     <<: *std-logging
     depends_on:
       - api
       - postgres
     env_file:
-      - .env.secret_key
-      - .env.public_key
+      - *jwt-public-key-env
+      - *secret-key-env
     environment:
+      <<: *redis-client-env
       SG_ENV: production
       STAFF_TIME_ZONE: $TZ
       PG_DATABASE_URL: "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres/placeos"
@@ -269,16 +272,18 @@ services:
   # Support
 
   init:
-    image: placeos/init:${PLACE_INIT_TAG:-latest}
+    image: placeos/init:${PLACE_INIT_TAG:-nightly}
     container_name: init
     restart: on-failure
-    networks:
-      placeos:
+    <<: *std-network
     <<: *std-logging
     depends_on:
       - rethink
-      - rubber-soul
+      - search-ingest
+    env_file:
+      - *secret-key-env
     environment:
+      <<: *deployment-env
       # User/Application Configuration
       PLACE_DOMAIN: ${PLACE_DOMAIN:-localhost:8443}
       PLACE_APPLICATION: ${PLACE_APPLICATION:-backoffice}
@@ -290,37 +295,36 @@ services:
       # Service Hosts
       <<: *rethinkdb-client-env
       <<: *elastic-client-env
-      # Environment
-      <<: *deployment-env
 
-  rubber-soul: # RethinkDB to Elasticsearch Service
-    image: placeos/rubber-soul:${PLACE_RUBBER_SOUL_TAG:-latest}
+  search-ingest: # RethinkDB to Elasticsearch Service
+    image: placeos/${PLACE_SEARCH_INGEST_IMAGE:-search-ingest}:${PLACE_SEARCH_INGEST_TAG:-nightly}
     restart: always
-    container_name: rubber-soul
-    hostname: rubber-soul
-    networks:
-      placeos:
+    container_name: *search-ingest-service
+    hostname: *search-ingest-service
+    <<: *std-network
     <<: *std-logging
     depends_on:
       - elastic
       - rethink
     environment:
+      <<: *deployment-env
+      # Must be specified for `>= 1.2108.0, <= 1.2109.1`
+      ES_DISABLE_BULK: "0"
       # Service Hosts
       <<: *rethinkdb-client-env
       <<: *elastic-client-env
-      # Environment
-      <<: *deployment-env
 
   dispatch: # Engine driver server registration and data routing
-    image: placeos/dispatch:${PLACE_DISPATCH_TAG:-latest}
+    image: placeos/dispatch:${PLACE_DISPATCH_TAG:-nightly}
     restart: always
     container_name: dispatch
     hostname: dispatch
-    networks:
-      placeos:
+    <<: *std-network
     <<: *std-logging
     environment:
       SERVER_SECRET: ${PLACE_SERVER_SECRET:-development}
+    env_file:
+      - *secret-key-env
 
   # Resources
 
@@ -329,10 +333,9 @@ services:
     restart: always
     container_name: elastic
     hostname: elastic
-    networks:
-      placeos:
     healthcheck:
       test: wget -q --no-verbose --tries=1 --spider http://localhost:9200/_cat/health
+    <<: *std-network
     <<: *std-logging
     volumes:
       - type: volume
@@ -345,26 +348,24 @@ services:
       TZ: $TZ
 
   etcd:
-    image: bitnami/etcd:${ETCD_VERSION:-3}
+    image: bitnami/etcd:${ETCD_VERSION:-3.5.1}
     restart: always
     container_name: etcd
     hostname: etcd
-    networks:
-      placeos:
+    <<: *std-network
+    <<: *std-logging
     healthcheck:
       test: etcdctl endpoint health
-    <<: *std-logging
     environment:
       ALLOW_NONE_AUTHENTICATION: "yes"
       TZ: $TZ
 
   influxdb:
-    image: influxdb:${INFLUXDB_IMAGE_TAG:-2.0.8}-alpine
+    image: influxdb:${INFLUXDB_IMAGE_TAG:-2.0.8-alpine}
     restart: always
     container_name: influx
     hostname: influx
-    networks:
-      placeos:
+    <<: *std-network
     <<: *std-logging
     healthcheck:
       test: influx bucket list
@@ -373,6 +374,41 @@ services:
         source: influx-data
         target: /root/.influxdbv2
     command: "--reporting-disabled"
+    
+  chronograf:
+    image: chronograf:${CHRONOGRAF_IMAGE_TAG:-1.9}
+    container_name: chronograf
+    restart: always
+    <<: *std-network
+    <<: *std-logging
+    env_file:
+      - *influxdb-api-key
+      - .env.chronograf  # Contains TOKEN_SECRET for OAuth integration
+    environment:
+      BASE_PATH: /analytics
+      INFLUXDB_URL: $INFLUX_HOST
+      INFLUXDB_ORG: $INFLUX_ORG
+      GENERIC_CLIENT_ID: "COPY_ANALYTICS_CLIENT_ID_FROM_BACKOFFICE"
+      GENERIC_CLIENT_SECRET: "COPY_ANALYTICS_CLIENT_SECRET_FROM_BACKOFFICE"
+      GENERIC_AUTH_URL: "https://${PLACE_DOMAIN}/auth/oauth/authorize"
+      GENERIC_TOKEN_URL: "https://${PLACE_DOMAIN}/auth/oauth/token"
+      GENERIC_API_URL: "https://${PLACE_DOMAIN}/api/engine/v2/users/current"
+      GENERIC_API_KEY: "email"
+      GENERIC_SCOPES: "public"
+      GENERIC_NAME: "PlaceOS"
+      PUBLIC_URL: "https://${PLACE_DOMAIN}"
+
+  mosquitto:
+    image: iegomez/mosquitto-go-auth:${MOSQUITTO_IMAGE_TAG:-latest}
+    restart: always
+    container_name: mosquitto
+    hostname: mosquitto
+    <<: *std-network
+    <<: *std-logging
+    volumes:
+      - ${PWD}/config/mosquitto/mosquitto.conf:/etc/mosquitto/mosquitto.conf
+    environment:
+      TZ: $TZ
 
   nginx:
     image: placeos/nginx:${PLACE_NGINX_TAG:-nightly}
@@ -382,8 +418,7 @@ services:
     ports:
       - 8080:80
       - 8443:443
-    networks:
-      placeos:
+    <<: *std-network
     <<: *std-logging
     depends_on:
       - api
@@ -396,11 +431,10 @@ services:
         read_only: true
       - type: volume
         source: nginx-data
-        target: /etc/nginx/
-      - ${PWD}/config/nginx/nginx.conf:/etc/nginx/nginx.conf
+        target: /etc/nginx/ssl
       - ${PWD}/.htpasswd-kibana:/etc/nginx/.htpasswd-kibana
     env_file:
-      - *jwt-public
+      - *jwt-public-key-env
       - *influxdb-api-key
     environment:
       TZ: $TZ
@@ -411,11 +445,10 @@ services:
     restart: always
     container_name: redis
     hostname: redis
-    networks:
-      placeos:
+    <<: *std-network
+    <<: *std-logging
     healthcheck:
       test: redis-cli ping
-    <<: *std-logging
     volumes:
       - type: volume
         source: redis-data
@@ -428,12 +461,11 @@ services:
     restart: always
     container_name: rethink
     hostname: rethink
-    networks:
-      placeos:
+    <<: *std-network
+    <<: *std-logging
     healthcheck:
       # Check if the DB's port is open
       test: "bash -c ': &>/dev/null </dev/tcp/127.0.0.1/28015'"
-    <<: *std-logging
     volumes:
       - type: volume
         source: rethink-data

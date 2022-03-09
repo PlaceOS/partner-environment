@@ -1,6 +1,6 @@
 #! /usr/bin/env bash
 
-banner() {
+banner() (
     echo
     echo '░░░░░░░\  ░░\                                ░░░░░░\   ░░░░░░\'
     echo '░░  __░░\ ░░ |                              ░░  __░░\ ░░  __░░\'
@@ -11,6 +11,42 @@ banner() {
     echo '░░ |      ░░ |\░░░░░░░ |\░░░░░░░\ \░░░░░░░\  ░░░░░░  |\░░░░░░  |'
     echo '\__|      \__| \_______| \_______| \_______| \______/  \______/'
     echo
+)
+
+# This functions mutates the outer scope, hence {} are used
+load_environment() {
+    # Save the existing environment
+    ext_env=$(mktemp)
+    export -p >"${ext_env}"
+    set -o allexport
+
+    # Load contents of .env
+    . "${base_path}/.env"
+
+    # Overlay the existing environment
+    . "${ext_env}"
+
+    # Conditional config for backwards compat
+    if [[ $PLACEOS_TAG =~ ^placeos-[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+
+        if [[ $PLACEOS_TAG < "placeos-1.2108.2" ]]; then
+            PLACE_STAFF_API_TAG="nightly"
+            PLACE_NGINX_TAG="staff-api"
+        fi
+
+        if [[ $PLACEOS_TAG < "placeos-1.2109.0" ]]; then
+            PLACE_FRONTEND_LOADER_IMAGE="frontends"
+        fi
+
+        if [[ $PLACEOS_TAG < "placeos-1.2111.0" ]]; then
+            PLACE_SEARCH_INGEST_IMAGE="rubber-soul"
+        fi
+    fi
+
+    # Cleanup
+    set +o allexport
+    rm "${ext_env}"
+    unset ext_env
 }
 
 # The bash hail mary (exit on failure, unset variables, fail pipe composition early)
@@ -42,19 +78,19 @@ COMPOSE_PROJECT_NAME=placeos
 # Helpers
 ###################################################################################################
 
-unknown_argument() {
+unknown_argument() (
     unknown_arg="${1}"
     usage="${2}"
     [ -n "${unknown_arg}" ] && echo -e "░░░ ${red}Unknown option:${reset} ${unknown_arg}"
     eval "${usage}"
     exit 1
-}
+)
 
-abort() {
+abort() (
     echo -e "░░░ ${red}${1}${reset}"
     echo "░░░ Logs can be found in ${logfile}"
     exit 1
-}
+)
 
 run_or_abort() {
     task="${1}"
@@ -80,7 +116,7 @@ run_or_abort() {
 # Start
 ###################################################################################################
 
-hard_reset() {
+hard_reset() (
     # TODO: drop influxdb tables
     # TODO: clear redis
 
@@ -98,9 +134,9 @@ hard_reset() {
         'docker-compose restart nginx' \
         "Restarting nginx..." \
         "Failed to restart nginx."
-}
+)
 
-start_environment__usage() {
+start_environment__usage() (
     cat <<EOF
 Usage: ./placeos start [-h|--help]
 
@@ -116,10 +152,10 @@ Arguments:
     -v, --verbose           Write logs to STDOUT in addition to the log file.
     -h, --help              Display this message.
 EOF
-}
+)
 
-start_environment() {
-    PROFILES=""
+start_environment() (
+    SERVICES=('')
     hard_reset=false
     enable_kibana=false
     email_argument=""
@@ -175,38 +211,12 @@ start_environment() {
 
     banner
 
-    # Save the existing environment
-    ext_env=$(mktemp)
-    export -p > "${ext_env}"
-    set -o allexport
+    load_environment
 
-    # Load contents of .env
-    . "${base_path}/.env"
-
-
-    # Overlay the existing environment
-    . "${ext_env}"
-
-    # Conditional config for backwards compat
-    if [[ $PLACEOS_TAG =~ ^placeos-[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-
-        if [[ $PLACEOS_TAG < "placeos-1.2108.2" ]]; then
-          PLACE_STAFF_API_TAG="nightly"
-          PLACE_NGINX_TAG="staff-api"
-        fi
-
-        if [[ $PLACEOS_TAG < "placeos-1.2109.0" ]]; then
-          PLACE_FRONTEND_LOADER_IMAGE="frontends"
-        fi
-
-    fi
-
-    # Cleanup
-    set +o allexport
-    rm "${ext_env}"
-    unset ext_env
+    # Override .env arguments with CLI arguments
 
     echo "░░░ Starting PlaceOS <${PLACEOS_TAG}>"
+
     [ $VERBOSE == "false" ] && echo "░░░ For detailed logging, run \`tail -f ${logfile}\`"
 
     EMAIL_ENV="${base_path}/.env.email"
@@ -221,8 +231,6 @@ start_environment() {
         echo "PLACE_EMAIL=${PLACE_EMAIL}" >${EMAIL_ENV}
     fi
     set +a
-
-    # Override .env arguments with CLI arguments
 
     if [ -n "${password_argument}" ]; then
         PLACE_PASSWORD=${password_argument}
@@ -274,10 +282,10 @@ start_environment() {
     fi
 
     if [[ $ENABLE_KIBANA == "true" ]] || [[ $enable_kibana == "true" ]]; then
-      PROFILES+=" --profile kibana"
-      if [[ $(uname) == "Linux" ]]; then
-        PROFILES+=" --profile metricbeat"
-      fi
+        PROFILES+=" --profile kibana"
+        if [[ $(uname) == "Linux" ]]; then
+            PROFILES+=" --profile metricbeat"
+        fi
     fi
 
     run_or_abort \
@@ -309,12 +317,12 @@ start_environment() {
 
     echo "░░░ PlaceOS initialised. Login to https://$PLACE_DOMAIN/backoffice/ with..."
     echo "░░░ $PLACE_EMAIL:$PLACE_PASSWORD"
-}
+)
 
 # Stop
 ###################################################################################################
 
-stop_environment__usage() {
+stop_environment__usage() (
     cat <<EOF
 Usage: ./placeos stop [-h|--help]
 
@@ -324,9 +332,9 @@ Arguments:
     -v, --verbose           Write logs to STDOUT in addition to the log file.
     -h, --help              Display this message
 EOF
-}
+)
 
-stop_environment() {
+stop_environment() (
     while [ ${#} -gt 0 ]; do
         command="${1}"
         shift
@@ -348,12 +356,59 @@ stop_environment() {
         "docker-compose down --remove-orphans" \
         "Tearing down PlaceOS" \
         "Failed to teardown PlaceOS"
-}
+)
 
 # Update
 ###################################################################################################
 
-update_environment__usage() {
+task__usage() (
+    cat <<EOF
+Usage: ./placeos task [-h|--help|help] [-t|--task] <task> [help|...] [arguments...]
+
+Run a task in the PlaceOS environment.
+
+Arguments:
+    -h, --help              Display this message
+    -t, ---tasks            Display list of available tasks
+EOF
+)
+
+task() (
+    load_environment
+
+    PARAMS=""
+    while [ ${#} -gt 0 ]; do
+        command="${1}"
+        shift
+        case ${command} in
+        -h | --help)
+            task__usage
+            exit 0
+            ;;
+        -t | --tasks)
+            ./scripts/run-sam-task help
+            exit 0
+            ;;
+        *)
+            PARAMS="${PARAMS} ${command}"
+            shift
+            ;;
+        esac
+    done
+
+    # Print help when no task passed
+    if [[ -z ${PARAMS} ]]; then
+        ./scripts/run-sam-task help
+        exit 0
+    fi
+
+    ./scripts/run-sam-task ${PARAMS}
+)
+
+# Update
+###################################################################################################
+
+update_environment__usage() (
     cat <<EOF
 Usage: ./placeos update [-h|--help]
 
@@ -362,9 +417,9 @@ Update the PlaceOS environment
 Arguments:
     -h, --help              Display this message
 EOF
-}
+)
 
-update_environment() {
+update_environment() (
     while [ ${#} -gt 0 ]; do
         command="${1}"
         shift
@@ -383,12 +438,12 @@ update_environment() {
     # Users will be able to to the next patch, or minor version
     # Version info can be extracted from the heads of version branches in a file containing the version
     abort "Not implemented."
-}
+)
 
 # Root Command
 ###################################################################################################
 
-usage() {
+usage() (
     cat <<EOF
 Usage: ./placeos [-h|--help] [command]
 
@@ -397,12 +452,13 @@ Helper script for interfacing with the PlaceOS Partner Environment
 Command:
     start                   Start the environment.
     stop                    Stops the environment.
+    task                    Runs a task in the environment.
     help                    Display this message.
 
 Arguments:
     -h, --help              Display this message.
 EOF
-}
+)
 
 if [ $# -eq 0 ]; then
     usage
@@ -417,6 +473,9 @@ start)
     ;;
 stop)
     stop_environment "$@"
+    ;;
+task)
+    task "$@"
     ;;
 update)
     update_environment "$@"
