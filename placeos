@@ -310,10 +310,12 @@ start_environment() (
         "Bringing up services..." \
         "Failed to start services."
 
-    run_or_abort \
-        "${base_path}/scripts/init-influxdb" \
-        "Configuring InfluxDB..." \
-        "Failed to configure InfluxDB."
+    if [[ $PROFILES == *"analytics"* ]]; then
+        run_or_abort \
+            "${base_path}/scripts/init-influxdb" \
+            "Configuring InfluxDB..." \
+            "Failed to configure InfluxDB."
+    fi
 
     [ ${hard_reset} == "true" ] && hard_reset
 
