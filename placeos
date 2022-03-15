@@ -148,15 +148,17 @@ Arguments:
     --password PASSWORD     Password for created admin account. [default: development]
     --domain DOMAIN         Domain to configure. [default: localhost:8443]
     --application APP       Application to configure. [default: backoffice]
-    -k, --kibana            Set-up Kibana and Elastic stack.
+    --analytics             Set-up analytics stack, including MQTT & InfluxDB & Chronograf
+    --kibana                Set-up Kibana and Elastic stack.
     -v, --verbose           Write logs to STDOUT in addition to the log file.
     -h, --help              Display this message.
 EOF
 )
 
 start_environment() (
-    SERVICES=('')
+    PROFILES=""
     hard_reset=false
+    enable_analytics=false
     enable_kibana=false
     email_argument=""
     password_argument=""
@@ -193,7 +195,10 @@ start_environment() (
             application_arguement="${1}"
             shift
             ;;
-        -k | --kibana)
+        --analytics)
+            enable_analytics=true
+            ;;
+        --kibana)
             enable_kibana=true
             ;;
         -v | --verbose)
@@ -212,8 +217,6 @@ start_environment() (
     banner
 
     load_environment
-
-    # Override .env arguments with CLI arguments
 
     echo "░░░ Starting PlaceOS <${PLACEOS_TAG}>"
 
@@ -275,6 +278,10 @@ start_environment() (
     echo "PLACE_EMAIL=${PLACE_EMAIL}" >"${EMAIL_ENV}"
     # TODO: use init check instead of writing the password.
     echo "PLACE_PASSWORD=${PLACE_PASSWORD}" >>"${EMAIL_ENV}"
+
+    if [[ $ENABLE_ANALYTICS == "true" ]] || [[ $enable_analytics == "true" ]]; then
+        PROFILES+=" --profile analytics"
+    fi
 
     if [[ -d "${base_path}/.htpasswd-kibana" ]]; then
         echo "░░░ Detected malformed auth file. Cleaning up"
@@ -358,7 +365,7 @@ stop_environment() (
         "Failed to teardown PlaceOS"
 )
 
-# Update
+# Task
 ###################################################################################################
 
 task__usage() (

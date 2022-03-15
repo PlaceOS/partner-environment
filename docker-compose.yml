@@ -193,9 +193,12 @@ services:
       PLACE_LOADER_WWW: www
 
   source:
-    image: docker.io/placeos/source:${PLACE_SOURCE_TAG:-nightly}
+    image: placeos/source:${PLACE_SOURCE_TAG:-nightly}
+    profiles:
+      - analytics
     restart: always
     container_name: source
+    hostname: source
     <<: *std-network
     <<: *std-logging
     depends_on:
@@ -335,6 +338,7 @@ services:
     hostname: elastic
     healthcheck:
       test: wget -q --no-verbose --tries=1 --spider http://localhost:9200/_cat/health
+      start_period: 1m
     <<: *std-network
     <<: *std-logging
     volumes:
@@ -362,6 +366,8 @@ services:
 
   influxdb:
     image: influxdb:${INFLUXDB_IMAGE_TAG:-2.0.8-alpine}
+    profiles:
+      - analytics
     restart: always
     container_name: influx
     hostname: influx
@@ -374,11 +380,14 @@ services:
         source: influx-data
         target: /root/.influxdbv2
     command: "--reporting-disabled"
-    
+
   chronograf:
     image: chronograf:${CHRONOGRAF_IMAGE_TAG:-1.9}
-    container_name: chronograf
+    profiles:
+      - analytics
     restart: always
+    container_name: chronograf
+    hostname: chronograf
     <<: *std-network
     <<: *std-logging
     env_file:
@@ -400,6 +409,8 @@ services:
 
   mosquitto:
     image: iegomez/mosquitto-go-auth:${MOSQUITTO_IMAGE_TAG:-latest}
+    profiles:
+      - analytics
     restart: always
     container_name: mosquitto
     hostname: mosquitto
@@ -481,8 +492,7 @@ services:
     restart: always
     container_name: logstash
     hostname: logstash
-    networks:
-      placeos:
+    << : *std-network
     << : *std-logging
     depends_on:
       - validate-logstash-config
@@ -498,8 +508,8 @@ services:
       - kibana
     restart: "no"
     container_name: validate-logstash
-    networks:
-      placeos:
+    << : *std-network
+    << : *std-logging
     volumes:
       - ${PWD}/config/logstash/config:/config
     command: logstash -t -f /config
@@ -512,8 +522,7 @@ services:
     restart: unless-stopped
     container_name: logspout
     hostname: logspout
-    networks:
-      placeos:
+    << : *std-network
     << : *std-logging
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
@@ -526,8 +535,7 @@ services:
     restart: always
     container_name: kibana
     hostname: kibana
-    networks:
-      placeos:
+    << : *std-network
     << : *std-logging
     environment:
       <<: *elastic-client-env
@@ -546,8 +554,7 @@ services:
       - kibana
     container_name: curator
     hostname: curator
-    networks:
-      placeos:
+    << : *std-network
     << : *std-logging
     volumes:
       - ${PWD}/config/curator/action-file.yml:/action-file.yml
@@ -562,8 +569,7 @@ services:
     container_name: metricbeat
     hostname: metricbeat
     user: root
-    networks:
-      placeos:
+    << : *std-network
     << : *std-logging
     environment:
       <<: *elastic-client-env
