@@ -330,7 +330,7 @@ services:
   # Resources
 
   elastic:
-    image: blacktop/elasticsearch:${ELASTIC_VERSION:-7.16.2}
+    image: blacktop/elasticsearch:${ELASTIC_VERSION:-7.10.2}
     restart: always
     container_name: elastic
     hostname: elastic
@@ -484,7 +484,7 @@ services:
 
   # Aggregates logs and forwards them to Elasticsearch.
   logstash:
-    image: blacktop/logstash:${ELASTIC_VERSION:-7.6}
+    image: blacktop/logstash:${ELASTIC_VERSION:-7.10.2}
     profiles:
       - kibana
     restart: always
@@ -501,7 +501,7 @@ services:
 
   # Run 'docker-compose run --rm validate-logstash-config' to quickly check the logstash config.
   validate-logstash-config:
-    image: blacktop/logstash:${ELASTIC_VERSION:-7.6}
+    image: blacktop/logstash:${ELASTIC_VERSION:-7.10.2}
     profiles:
       - kibana
     restart: "no"
@@ -527,7 +527,7 @@ services:
     command: gelf://${LOGSTASH_HOST}:${LOGSTASH_PORT}
 
   kibana:
-    image: blacktop/kibana:${ELASTIC_VERSION:-7.6}
+    image: blacktop/kibana:${ELASTIC_VERSION:-7.10.2}
     profiles:
       - kibana
     restart: always
@@ -547,7 +547,7 @@ services:
   # Takes care of piling up Elasticsearch indices/logs. Can do many other things as well.
   # Set up a cron job that runs "docker-compose run --rm curator --config /config.yml /action-file.yml" every once in a while.
   curator:
-    image: bobrik/curator:5.7.6
+    image: bobrik/curator:5.8.1
     profiles:
       - kibana
     container_name: curator
@@ -560,7 +560,7 @@ services:
 
   # Gets metrics from host machine and send to elastic
   metricbeat:
-    image: elastic/metricbeat:${ELASTIC_VERSION:-7.6}
+    image: elastic/metricbeat:${ELASTIC_VERSION:-7.10.2}
     profiles:
       - metricbeat
     restart: unless-stopped
