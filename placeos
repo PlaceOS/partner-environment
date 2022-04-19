@@ -89,7 +89,7 @@ unknown_argument() (
 )
 
 prompt() (
-  echo -e "${PROMPT} ${1}"
+    echo -e "${PROMPT} ${1}"
 )
 
 abort() (
@@ -295,10 +295,10 @@ start_environment() (
     fi
 
     if [[ $ENABLE_KIBANA == "true" ]] || [[ $enable_kibana == "true" ]]; then
-      PROFILES+=" --profile kibana"
-      if [[ $(uname) == "Linux" ]]; then
-        PROFILES+=" --profile metricbeat"
-      fi
+        PROFILES+=" --profile kibana"
+        if [[ $(uname) == "Linux" ]]; then
+            PROFILES+=" --profile metricbeat"
+        fi
     fi
 
     run_or_abort \
@@ -423,12 +423,19 @@ task() (
 # Update
 ###################################################################################################
 
+PLACEOS_RELEASE_REPO="PlaceOS/PlaceOS"
+
 CALVER_FULL_REGEX='[0-9]+\.[0-9]{4}\.[0-9]+(-rc[0-9]+)?'
-CALVER_MONTH_REGEX='^[0-9]+\.[0-9]{4}$'
-VERSION_CHANNEL_REGEX='^(nightly|preview|latest)$'
+CALVER_MONTH_REGEX='[0-9]+\.[0-9]{4}'
+VERSION_CHANNEL_REGEX='(nightly|preview|latest)'
 
 fetch_release_tags() (
-  git ls-remote https://github.com/PlaceOS/PlaceOS | cut -f2 | grep '^refs/tags/' | cut -d'/' -f3 | sort --version-sort --reverse
+    git ls-remote https://github.com/${PLACEOS_RELEASE_REPO} |
+        cut -f2 |
+        grep '^refs/tags/' |
+        cut -d'/' -f3 |
+        sort --version-sort --reverse |
+        sed -E "s/($CALVER_FULL_REGEX|$CALVER_MONTH_REGEX)/placeos-\1/g"
 )
 
 # TODO: Change to `release` once the flow has been established
@@ -437,48 +444,46 @@ RELEASE_BRANCH="nightly"
 # If called without a version, fetches latest.
 # Otherwise fetches notes for passed version
 release_notes() (
-  temporary_changelog="$(mktemp -d)/CHANGELOG.md"
+    temporary_changelog="$(mktemp -d)/CHANGELOG.md"
 
-  curl \
-      --silent \
-      --location \
-      --proto-redir -all,https \
-      https://raw.githubusercontent.com/PlaceOS/PlaceOS/${RELEASE_BRANCH}/CHANGELOG.md > $temporary_changelog
+    curl \
+        --silent \
+        --location \
+        --proto-redir -all,https \
+        https://raw.githubusercontent.com/${PLACEOS_RELEASE_REPO}/${RELEASE_BRANCH}/CHANGELOG.md >$temporary_changelog
 
-  if [[ $# = 1 ]]
-  then
-    version_header="$(grep --extended-regexp "^## ${1}$" "$temporary_changelog" | head -1)"
+    if [[ $# = 1 ]]; then
+        version_header="$(grep --extended-regexp "^## ${1}$" "$temporary_changelog" | head -1)"
 
-    # Check version is present in changelog
-    if [[ ! $version_header ]]
-    then
-      echo -e "${PROMPT} ${red}${1} not found in CHANGELOG${reset}"
-      return
+        # Check version is present in changelog
+        if [[ ! $version_header ]]; then
+            prompt "${red}${1} not found in CHANGELOG${reset}"
+            return
+        fi
+
+        # Remove lines before the version header (simplifies range below)
+        working_copy="${temporary_changelog}.bak"
+        cp "${temporary_changelog}" "${working_copy}"
+        sed -n "/^${version_header}$/,\$p" "$working_copy" >$temporary_changelog
+    else
+        # Extract the latest version
+        version_header="$(grep --extended-regexp "^## ${CALVER_FULL_REGEX}$" "$temporary_changelog" | head -1)"
     fi
 
-    # Remove lines before the version header (simplifies range below)
-    working_copy="${temporary_changelog}.bak"
-    cp "${temporary_changelog}" "${working_copy}"
-    sed -n "/^${version_header}$/,\$p" "$working_copy" > $temporary_changelog
-  else
-    # Extract the latest version
-    version_header="$(grep --extended-regexp "^## ${CALVER_FULL_REGEX}$" "$temporary_changelog" | head -1)"
-  fi
+    previous_version_header="$(grep --extended-regexp "^## ${CALVER_FULL_REGEX}$" "$temporary_changelog" | head -2 | tail -1)"
 
-  previous_version_header="$(grep --extended-regexp "^## ${CALVER_FULL_REGEX}$" "$temporary_changelog" | head -2 | tail -1)"
+    # Create a URL that directs to the header of the version in the CHANGELOG
+    anchor="$(echo "$version_header" | tr -d "[:blank:]" | tr -d '.#')"
+    changelog_uri="https://github.com/${PLACEOS_RELEASE_REPO}/blob/${RELEASE_BRANCH}/CHANGELOG.md#${anchor}"
 
-  # Create a URL that directs to the header of the version in the CHANGELOG
-  anchor="$(echo "$version_header"| tr -d "[:blank:]" | tr -d '.#')"
-  changelog_uri="https://github.com/PlaceOS/PlaceOS/blob/${RELEASE_BRANCH}/CHANGELOG.md#${anchor}"
-
-  echo ""
-  echo "For the full PlaceOS release notes, see ${changelog_uri}"
-  sed -E "/^$version_header/,/^$previous_version_header$/!d;//d" "$temporary_changelog"
+    echo ""
+    echo "For the full PlaceOS release notes, see ${changelog_uri}"
+    sed -E "/^$version_header/,/^$previous_version_header$/!d;//d" "$temporary_changelog"
 )
 
 update_environment__usage() (
     cat <<EOF
-Usage: ./placeos update [-h|--help] [--environment] [VERSION]
+Usage: ./placeos update [-h|--help] [VERSION]
 
 Modifies PLACEOS_TAG to the selected PlaceOS platform version
 
@@ -496,20 +501,57 @@ update_environment() (
             update_environment__usage
             exit 0
             ;;
-        *)
+        -*)
             unknown_argument "${command}" "update_environment__usage"
+            ;;
+        *)
+            version="$command"
+            [[ ${#} = 0 ]] || abort "Expected a single VERSION argument."
+            break
             ;;
         esac
     done
 
-    # The basic idea is that the script should not need git...
-    # Users will be able to to the next patch, or minor version
-    # Version info can be extracted from the heads of version branches in a file containing the version
-    abort "Not implemented."
+    tags=$(fetch_release_tags)
+
+    if [[ -z "$version" ]]; then
+        prompt "Plese select from the following versions (CTRL-C to quit)"
+        PS3="PlaceOS version: "
+        select version in $tags; do
+            case $version in
+            *)
+                # shellcheck disable=2076
+                if [[ " $tags " =~ " $version " ]]; then
+                    break
+                else
+                    prompt "$REPLY was not recognised."
+                fi
+                ;;
+            esac
+        done
+    fi
+
+    # shellcheck disable=2076
+    if [[ ! " $tags " =~ " $version " ]]; then
+        prompt "Valid versions are...\n\n$(echo $tags | tr ' ' '\n')\n"
+        abort "$version is not a valid version."
+    fi
+
+    echo $version
 )
 
 # Upgrade
 ###################################################################################################
+
+PARTNER_ENV_REPO="place-labs/partner-environment"
+
+fetch_environment_tags() (
+    git ls-remote https://github.com/${PARTNER_ENV_REPO} |
+        cut -f2 |
+        grep -e '^refs/tags/' |
+        cut -d'/' -f3 |
+        sort --version-sort --reverse
+)
 
 upgrade_environment__usage() (
     cat <<EOF
@@ -521,16 +563,6 @@ Arguments:
     -v, --verbose           Write logs to STDOUT in addition to the log file.
     -h, --help              Display this message
 EOF
-)
-
-PARTNER_ENV_REPO="place-labs/partner-environment"
-
-fetch_environment_tags() (
-  git ls-remote https://github.com/${PARTNER_ENV_REPO} \
-    | cut -f2 \
-    | grep -e '^refs/tags/' \
-    | cut -d'/' -f3 \
-    | sort --version-sort --reverse
 )
 
 upgrade_environment() (
@@ -547,7 +579,7 @@ upgrade_environment() (
         -v | --verbose)
             VERBOSE="true"
             ;;
-        -* )
+        -*)
             unknown_argument "${command}" "upgrade_environment__usage"
             ;;
         *)
@@ -560,44 +592,39 @@ upgrade_environment() (
 
     tags="$(fetch_environment_tags) latest"
 
-    if [[ -z "$version" ]]
-    then
+    if [[ -z "$version" ]]; then
         prompt "Plese select from the following versions (CTRL-C to quit)"
         PS3="PlaceOS version: "
-        select version in $tags
-        do
-        case $version in
+        select version in $tags; do
+            case $version in
             latest)
-            break
-            ;;
-            quit)
-            exit 1
-            ;;
-            *)
-            # shellcheck disable=2076
-            if [[ " $tags " =~ " $version " ]]
-            then
                 break
-            else
-                prompt "$REPLY was not recognised."
-            fi
-            ;;
-        esac
+                ;;
+            quit)
+                exit 1
+                ;;
+            *)
+                # shellcheck disable=2076
+                if [[ " $tags " =~ " $version " ]]; then
+                    break
+                else
+                    prompt "$REPLY was not recognised."
+                fi
+                ;;
+            esac
         done
     fi
 
     # shellcheck disable=2076
-    if [[ ! " $tags " =~ " $version " ]]
-    then
+    if [[ ! " $tags " =~ " $version " ]]; then
         prompt "Valid versions are...\n\n$(echo $tags | tr ' ' '\n')\n"
         abort "$version is not a valid version."
     fi
 
-    if [[ $version = "latest" ]]
-    then
-       reference="master"
+    if [[ $version = "latest" ]]; then
+        reference="master"
     else
-       reference="$version"
+        reference="$version"
     fi
 
     # Set git-config values known to fix git errors
@@ -613,16 +640,15 @@ upgrade_environment() (
     last_commit=$(git rev-parse "$reference")
 
     run_or_abort \
-      "git pull --autostash --quiet --rebase origin $reference" \
-      "Upgrading PlaceOS Partner Environment..." \
-      "Failed to upgrade PlaceOS Partner Environment"
+        "git pull --autostash --quiet --rebase origin $reference" \
+        "Upgrading PlaceOS Partner Environment..." \
+        "Failed to upgrade PlaceOS Partner Environment"
 
     # Check if it was really updated or not
-    if [[ "$(git rev-parse HEAD)" = "$last_commit" ]]
-    then
-      prompt "PlaceOS Partner Environment is already at $version"
+    if [[ "$(git rev-parse HEAD)" = "$last_commit" ]]; then
+        prompt "PlaceOS Partner Environment is already at $version"
     else
-      prompt "PlaceOS Partner Environment has been updated to $version"
+        prompt "PlaceOS Partner Environment has been updated to $version"
     fi
 )
 
