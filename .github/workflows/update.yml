@@ -22,7 +22,7 @@ jobs:
     - name: Get latest version from PlaceOS/PlaceOS
       id: version
       run: |
-        latest=$(git tag | grep -r '${{ env.VERSION_REGEX }}' | sort | tail -1)
+        latest=$(git tag --list | grep --extended-regexp '${{ env.VERSION_REGEX }}' | sort | tail -1)
         echo ::set-output name=version::$latest
 
   update:
@@ -46,11 +46,11 @@ jobs:
         git checkout "$branch"
 
         # Update `.env`
-        sed -i -r 's/^PLACEOS_TAG=placeos-${{ env.VERSION_REGEX }}$/PLACEOS_TAG=placeos-${{ needs.placeos-latest.outputs.version }}/g' \
+        sed -i '.bak' -E 's/^PLACEOS_TAG=.*/PLACEOS_TAG=${PLACEOS_TAG:-placeos-${{ needs.placeos-latest.outputs.version }}}/g' \
           .env
 
         # Update CI matrix
-        sed -i -r 's/${{ env.VERSION_REGEX }}/${{ needs.latest.outputs.version }}/g' \
+        sed -i '.bak' -E 's/${{ env.VERSION_REGEX }}/${{ needs.latest.outputs.version }}/g' \
           .github/workflows/ci.yml
 
         # Commit
