@@ -91,6 +91,34 @@ Arguments:
     -h, --help              Display this message
 ```
 
+### `./placeos update`
+
+```
+Usage: ./placeos update [-h|--help] [VERSION]
+
+Modifies PLACEOS_TAG to the selected PlaceOS platform version.
+If VERSION is omitted, defaults to the most recent stable version.
+
+Arguments:
+    --list                  List the available versions
+    -v, --verbose           Write logs to STDOUT in addition to the log file
+    -h, --help              Display this message
+```
+
+### `./placeos upgrade`
+
+```
+Usage: ./placeos upgrade [-h|--help] [VERSION]
+
+Upgrades the PlaceOS Partner Environment.
+If VERSION is omitted, defaults to the most recent stable version.
+
+Arguments:
+    --list                  Lists versions of the Partner Environment
+    -v, --verbose           Write logs to STDOUT in addition to the log file
+    -h, --help              Display this message
+```
+
 ### `$ ./placeos task`
 
 ```shell-session
