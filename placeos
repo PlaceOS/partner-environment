@@ -78,17 +78,23 @@ COMPOSE_PROJECT_NAME=placeos
 # Helpers
 ###################################################################################################
 
+PROMPT="░░░"
+
 unknown_argument() (
     unknown_arg="${1}"
     usage="${2}"
-    [ -n "${unknown_arg}" ] && echo -e "░░░ ${red}Unknown option:${reset} ${unknown_arg}"
+    [ -n "${unknown_arg}" ] && echo -e "${PROMPT} ${red}Unknown option:${reset} ${unknown_arg}"
     eval "${usage}"
     exit 1
 )
 
+prompt() (
+  echo "${PROMPT} ${1}"
+)
+
 abort() (
-    echo -e "░░░ ${red}${1}${reset}"
-    echo "░░░ Logs can be found in ${logfile}"
+    echo -e "${PROMPT} ${red}${1}${reset}"
+    prompt "Logs can be found in ${logfile}"
     exit 1
 )
 
@@ -100,11 +106,11 @@ run_or_abort() {
 
     exit_code=0
     if [ "${VERBOSE}" == "false" ]; then
-        start_spinner "░░░ ${start}"
+        start_spinner "${PROMPT} ${start}"
         eval "${task} >>${logfile} 2>&1" || exit_code=$?
         stop_spinner $exit_code
     else
-        echo "░░░ ${start}"
+        prompt "${start}"
         eval "${task} 2>&1 | tee -a ${logfile}" || exit_code=$?
     fi
 
@@ -169,7 +175,7 @@ start_environment() (
         shift
         case ${command} in
         --hard-reset)
-            read -rp "░░░ $(echo -e "${red}Warning:${reset}") This will reset your environment. Would you like to continue (y/n)? " choice
+            read -rp "${PROMPT} $(echo -e "${red}Warning:${reset}") This will reset your environment. Would you like to continue (y/n)? " choice
             case "${choice}" in
             y | Y | YES | yes)
                 hard_reset=true
@@ -218,9 +224,9 @@ start_environment() (
 
     load_environment
 
-    echo "░░░ Starting PlaceOS <${PLACEOS_TAG}>"
+    prompt "Starting PlaceOS <${PLACEOS_TAG}>"
 
-    [ $VERBOSE == "false" ] && echo "░░░ For detailed logging, run \`tail -f ${logfile}\`"
+    [ $VERBOSE == "false" ] && prompt "For detailed logging, run \`tail -f ${logfile}\`"
 
     EMAIL_ENV="${base_path}/.env.email"
 
@@ -258,7 +264,7 @@ start_environment() (
         PLACE_EMAIL=${PLACE_EMAIL:-"$(git config user.email 2>/dev/null || exit 0)"}
         PLACE_EMAIL=${PLACE_EMAIL:-"support@place.tech"}
 
-        read -rp "░░░ Please enter an email ($(echo -e "${green}default:${reset}") ${PLACE_EMAIL}): " choice
+        read -rp "${PROMPT} Please enter an email ($(echo -e "${green}default:${reset}") ${PLACE_EMAIL}): " choice
         if [ -n "${choice}" ]; then
             PLACE_EMAIL=${choice}
         fi
@@ -268,7 +274,7 @@ start_environment() (
     # TODO: Check for the user before asking for a password
     # TODO: Autogenerate the default password
     while [ -z ${PLACE_PASSWORD+x} ]; do
-        read -srp "░░░ Please enter a password: " choice
+        read -srp "${PROMPT} Please enter a password: " choice
         PLACE_PASSWORD="${choice}"
         # Newline after response
         echo ""
@@ -284,7 +290,7 @@ start_environment() (
     fi
 
     if [[ -d "${base_path}/.htpasswd-kibana" ]]; then
-        echo "░░░ Detected malformed auth file. Cleaning up"
+        prompt "Detected malformed auth file. Cleaning up"
         rm -r "${base_path}/.htpasswd-kibana"
     fi
 
@@ -324,8 +330,8 @@ start_environment() (
         "Initialising PlaceOS with default domain ($PLACE_DOMAIN)..." \
         "Failed to create user entity."
 
-    echo "░░░ PlaceOS initialised. Login to https://$PLACE_DOMAIN/backoffice/ with..."
-    echo "░░░ $PLACE_EMAIL:$PLACE_PASSWORD"
+    prompt "PlaceOS initialised. Login to https://$PLACE_DOMAIN/backoffice/ with..."
+    prompt "$PLACE_EMAIL:$PLACE_PASSWORD"
 )
 
 # Stop
@@ -417,11 +423,64 @@ task() (
 # Update
 ###################################################################################################
 
+CALVER_FULL_REGEX='[0-9]+\.[0-9]{4}\.[0-9]+(-rc[0-9]+)?'
+CALVER_MONTH_REGEX='^[0-9]+\.[0-9]{4}$'
+VERSION_CHANNEL_REGEX='^(nightly|preview|latest)$'
+
+fetch_release_tags() (
+  git ls-remote https://github.com/PlaceOS/PlaceOS | cut -f2 | grep '^refs/tags/' | cut -d'/' -f3 | sort --version-sort --reverse
+)
+
+# TODO: Change to `release` once the flow has been established
+RELEASE_BRANCH="nightly"
+
+# If called without a version, fetches latest.
+# Otherwise fetches notes for passed version
+release_notes() (
+  temporary_changelog="$(mktemp -d)/CHANGELOG.md"
+
+  curl \
+      --silent \
+      --location \
+      --proto-redir -all,https \
+      https://raw.githubusercontent.com/PlaceOS/PlaceOS/${RELEASE_BRANCH}/CHANGELOG.md > $temporary_changelog
+
+  if [[ $# = 1 ]]
+  then
+    version_header="$(grep --extended-regexp "^## ${1}$" "$temporary_changelog" | head -1)"
+
+    # Check version is present in changelog
+    if [[ ! $version_header ]]
+    then
+      echo -e "${PROMPT} ${red}${1} not found in CHANGELOG${reset}"
+      return
+    fi
+
+    # Remove lines before the version header (simplifies range below)
+    working_copy="${temporary_changelog}.bak"
+    cp "${temporary_changelog}" "${working_copy}"
+    sed -n "/^${version_header}$/,\$p" "$working_copy" > $temporary_changelog
+  else
+    # Extract the latest version
+    version_header="$(grep --extended-regexp "^## ${CALVER_FULL_REGEX}$" "$temporary_changelog" | head -1)"
+  fi
+
+  previous_version_header="$(grep --extended-regexp "^## ${CALVER_FULL_REGEX}$" "$temporary_changelog" | head -2 | tail -1)"
+
+  # Create a URL that directs to the header of the version in the CHANGELOG
+  anchor="$(echo "$version_header"| tr -d "[:blank:]" | tr -d '.#')"
+  changelog_uri="https://github.com/PlaceOS/PlaceOS/blob/${RELEASE_BRANCH}/CHANGELOG.md#${anchor}"
+
+  echo ""
+  echo "For the full PlaceOS release notes, see ${changelog_uri}"
+  sed -E "/^$version_header/,/^$previous_version_header$/!d;//d" "$temporary_changelog"
+)
+
 update_environment__usage() (
     cat <<EOF
-Usage: ./placeos update [-h|--help]
+Usage: ./placeos update [-h|--help] [--environment] [VERSION]
 
-Update the PlaceOS environment
+Modifies PLACEOS_TAG to the selected PlaceOS platform version
 
 Arguments:
     -h, --help              Display this message
@@ -449,6 +508,147 @@ update_environment() (
     abort "Not implemented."
 )
 
+# Upgrade
+###################################################################################################
+
+upgrade_environment__usage() (
+    cat <<EOF
+Usage: ./placeos upgrade [-h|--help] [VERSION]
+
+Upgrades the PlaceOS Partner Environment
+
+Arguments:
+    -v, --verbose           Write logs to STDOUT in addition to the log file.
+    -h, --help              Display this message
+EOF
+)
+
+PARTNER_ENV_REPO="place-labs/partner-environment"
+
+fetch_environment_tags() (
+  git ls-remote https://github.com/${PARTNER_ENV_REPO} \
+    | cut -f2 \
+    | grep -e '^refs/tags/' \
+    | cut -d'/' -f3 \
+    | sort --version-sort --reverse
+)
+
+upgrade_environment() (
+    version=""
+
+    while [ ${#} -gt 0 ]; do
+        command="${1}"
+        shift
+        case ${command} in
+        -h | --help | help)
+            upgrade_environment__usage
+            exit 0
+            ;;
+        -v | --verbose)
+            VERBOSE="true"
+            ;;
+        -* )
+            unknown_argument "${command}" "upgrade_environment__usage"
+            ;;
+        *)
+            version="$command"
+            [[ ${#} = 0 ]] || abort "Expected a single VERSION argument."
+            break
+            ;;
+        esac
+    done
+
+    tags="$(fetch_environment_tags) latest"
+
+    if [[ -z "$version" ]]
+    then
+        prompt "Plese select from the following versions (CTRL-C to quit)"
+        PS3="PlaceOS version: "
+        select version in $tags
+        do
+        case $version in
+            latest)
+            break
+            ;;
+            quit)
+            exit 1
+            ;;
+            *)
+            # shellcheck disable=2076
+            if [[ " $tags " =~ " $version " ]]
+            then
+                break
+            else
+                prompt "$REPLY was not recognised."
+            fi
+            ;;
+        esac
+        done
+    fi
+
+    # shellcheck disable=2076
+    [[ " $tags " =~ " $version " ]] || abort "$version is not a valid version."
+
+    if [[ $version = "latest" ]]
+    then
+       reference="master"
+    else
+       reference="$version"
+    fi
+
+    # Set git-config values known to fix git errors
+    # Line endings
+    git config --local core.eol lf
+    git config --local core.autocrlf false
+
+    # zeroPaddedFilemode fsck errors
+    git config --local fsck.zeroPaddedFilemode ignore
+    git config --local fetch.fsck.zeroPaddedFilemode ignore
+    git config --local receive.fsck.zeroPaddedFilemode ignore
+
+    # Autostash on rebase
+    git config --local rebase.autoStash true
+
+    local ret=0
+
+    # Repository state
+    last_head=$(git symbolic-ref --quiet --short HEAD || git rev-parse HEAD)
+
+    # Checkout update reference
+    run_or_abort \
+        "git checkout -q $reference -- " \
+        "Checking out $version..." \
+        "Failed to checkout $version"
+
+    # branch commit before update (used in changelog)
+    last_commit=$(git rev-parse "$reference")
+
+    run_or_abort \
+      "git pull --quiet --rebase $reference" \
+      "Upgrade PlaceOS Partner Environment" \
+      "Failed to upgrade PlaceOS Partner Environment"
+
+    # Check if it was really updated or not
+    if [[ "$(git rev-parse HEAD)" = "$last_commit" ]]
+    then
+      prompt "PlaceOS Partner Environment is already at $version."
+    else
+      prompt "PlaceOS Partner Environment has been updated to $version."
+    fi
+
+    # Go back to HEAD previous to update
+    git checkout -q "$last_head" --
+
+    # Unset git-config values set just for the upgrade
+    case "$resetAutoStash" in
+      "") git config --local --unset rebase.autoStash ;;
+      *) git config --local rebase.autoStash "$resetAutoStash" ;;
+    esac
+
+    # Exit with `1` if the update failed
+    exit $ret
+)
+
 # Root Command
 ###################################################################################################
 
@@ -461,6 +661,8 @@ Helper script for interfacing with the PlaceOS Partner Environment
 Command:
     start                   Start the environment.
     stop                    Stops the environment.
+    update                  Update the platform version.
+    upgrade                 Upgrade the Partner Environment.
     task                    Runs a task in the environment.
     help                    Display this message.
 
@@ -483,11 +685,14 @@ start)
 stop)
     stop_environment "$@"
     ;;
-task)
-    task "$@"
-    ;;
 update)
     update_environment "$@"
+    ;;
+upgrade)
+    upgrade_environment "$@"
+    ;;
+task)
+    task "$@"
     ;;
 -h | --help | help)
     usage
