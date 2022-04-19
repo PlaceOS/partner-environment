@@ -89,7 +89,7 @@ unknown_argument() (
 )
 
 prompt() (
-  echo "${PROMPT} ${1}"
+  echo -e "${PROMPT} ${1}"
 )
 
 abort() (
@@ -587,7 +587,11 @@ upgrade_environment() (
     fi
 
     # shellcheck disable=2076
-    [[ " $tags " =~ " $version " ]] || abort "$version is not a valid version."
+    if [[ ! " $tags " =~ " $version " ]]
+    then
+        prompt "Valid versions are...\n\n$(echo $tags | tr ' ' '\n')\n"
+        abort "$version is not a valid version."
+    fi
 
     if [[ $version = "latest" ]]
     then
@@ -606,47 +610,20 @@ upgrade_environment() (
     git config --local fetch.fsck.zeroPaddedFilemode ignore
     git config --local receive.fsck.zeroPaddedFilemode ignore
 
-    # Autostash on rebase
-    git config --local rebase.autoStash true
-
-    local ret=0
-
-    # Repository state
-    last_head=$(git symbolic-ref --quiet --short HEAD || git rev-parse HEAD)
-
-    # Checkout update reference
-    run_or_abort \
-        "git checkout -q $reference -- " \
-        "Checking out $version..." \
-        "Failed to checkout $version"
-
-    # branch commit before update (used in changelog)
     last_commit=$(git rev-parse "$reference")
 
     run_or_abort \
-      "git pull --quiet --rebase $reference" \
-      "Upgrade PlaceOS Partner Environment" \
+      "git pull --autostash --quiet --rebase origin $reference" \
+      "Upgrading PlaceOS Partner Environment..." \
       "Failed to upgrade PlaceOS Partner Environment"
 
     # Check if it was really updated or not
     if [[ "$(git rev-parse HEAD)" = "$last_commit" ]]
     then
-      prompt "PlaceOS Partner Environment is already at $version."
+      prompt "PlaceOS Partner Environment is already at $version"
     else
-      prompt "PlaceOS Partner Environment has been updated to $version."
+      prompt "PlaceOS Partner Environment has been updated to $version"
     fi
-
-    # Go back to HEAD previous to update
-    git checkout -q "$last_head" --
-
-    # Unset git-config values set just for the upgrade
-    case "$resetAutoStash" in
-      "") git config --local --unset rebase.autoStash ;;
-      *) git config --local rebase.autoStash "$resetAutoStash" ;;
-    esac
-
-    # Exit with `1` if the update failed
-    exit $ret
 )
 
 # Root Command
