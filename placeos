@@ -83,7 +83,7 @@ PROMPT="░░░"
 unknown_argument() (
     unknown_arg="${1}"
     usage="${2}"
-    [ -n "${unknown_arg}" ] && echo -e "${PROMPT} ${red}Unknown option:${reset} ${unknown_arg}"
+    [ -n "${unknown_arg}" ] && prompt "${red}Unknown option:${reset} ${unknown_arg}"
     eval "${usage}"
     exit 1
 )
@@ -93,7 +93,7 @@ prompt() (
 )
 
 abort() (
-    echo -e "${PROMPT} ${red}${1}${reset}"
+    prompt "${red}${1}${reset}"
     prompt "Logs can be found in ${logfile}"
     exit 1
 )
