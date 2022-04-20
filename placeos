@@ -1,4 +1,5 @@
 #! /usr/bin/env bash
+# shellcheck disable=1003,1090
 
 banner() (
     echo
@@ -114,7 +115,7 @@ run_or_abort() {
         eval "${task} 2>&1 | tee -a ${logfile}" || exit_code=$?
     fi
 
-    if [ $ignore_failure != "true" ]; then
+    if [ "$ignore_failure" != "true" ]; then
         [ $exit_code -eq 0 ] || abort "${failure:-"${task} failed with ${exit_code}"}"
     fi
 }
@@ -232,12 +233,12 @@ start_environment() (
 
     set -a
     if [ -f "${EMAIL_ENV}" ]; then
-        . ${EMAIL_ENV}
+        . "${EMAIL_ENV}"
     elif [ -n "${email_argument}" ]; then
         # Override env with CLI arguments
         PLACE_EMAIL=${email_argument}
         # Write the email so as to not prompt the user again.
-        echo "PLACE_EMAIL=${PLACE_EMAIL}" >${EMAIL_ENV}
+        echo "PLACE_EMAIL=${PLACE_EMAIL}" >"${EMAIL_ENV}"
     fi
     set +a
 
@@ -450,10 +451,10 @@ changelog() (
         --silent \
         --location \
         --proto-redir -all,https \
-        https://raw.githubusercontent.com/${PLACEOS_RELEASE_REPO}/${RELEASE_BRANCH}/CHANGELOG.md >$temporary_changelog
+        "https://raw.githubusercontent.com/${PLACEOS_RELEASE_REPO}/${RELEASE_BRANCH}/CHANGELOG.md" >"$temporary_changelog"
 
     if [[ $# = 1 ]]; then
-        version=$(echo $1 | sed -E 's/placeos-//g')
+        version=$(sed -E 's/placeos-//g' <<<"$1")
         version_header="$(grep --extended-regexp "^## ${version}$" "$temporary_changelog" | head -1)"
 
         # Check version is present in changelog
