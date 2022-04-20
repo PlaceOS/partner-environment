@@ -146,7 +146,7 @@ start_environment__usage() (
     cat <<EOF
 Usage: ./placeos start [-h|--help]
 
-Start the PlaceOS environment
+Start the PlaceOS environment.
 
 Arguments:
     --hard-reset            Reset the environment to a default state.
@@ -341,11 +341,11 @@ stop_environment__usage() (
     cat <<EOF
 Usage: ./placeos stop [-h|--help]
 
-Stop the PlaceOS environment
+Stop the PlaceOS environment.
 
 Arguments:
     -v, --verbose           Write logs to STDOUT in addition to the log file.
-    -h, --help              Display this message
+    -h, --help              Display this message.
 EOF
 )
 
@@ -383,8 +383,8 @@ Usage: ./placeos task [-h|--help|help] [-t|--task] <task> [help|...] [arguments.
 Run a task in the PlaceOS environment.
 
 Arguments:
-    -h, --help              Display this message
-    -t, ---tasks            Display list of available tasks
+    -h, --help              Display this message.
+    -t, ---tasks            Display list of available tasks.
 EOF
 )
 
@@ -490,9 +490,9 @@ Modifies PLACEOS_TAG to the selected PlaceOS platform version.
 If VERSION is omitted, defaults to the most recent stable version.
 
 Arguments:
-    --list                  List the available versions
-    -v, --verbose           Write logs to STDOUT in addition to the log file
-    -h, --help              Display this message
+    --list                  List the available versions.
+    -v, --verbose           Write logs to STDOUT in addition to the log file.
+    -h, --help              Display this message.
 EOF
 )
 
@@ -565,9 +565,9 @@ Upgrades the PlaceOS Partner Environment.
 If VERSION is omitted, defaults to the latest version.
 
 Arguments:
-    --list                  Lists versions of the Partner Environment
-    -v, --verbose           Write logs to STDOUT in addition to the log file
-    -h, --help              Display this message
+    --list                  Lists versions of the Partner Environment.
+    -v, --verbose           Write logs to STDOUT in addition to the log file.
+    -h, --help              Display this message.
 EOF
 )
 
@@ -639,7 +639,7 @@ usage() (
     cat <<EOF
 Usage: ./placeos [-h|--help] [command]
 
-Helper script for interfacing with the PlaceOS Partner Environment
+Helper script for interfacing with the PlaceOS Partner Environment.
 
 Command:
     start                   Start the environment.
