@@ -1,0 +1,183 @@
+#! /usr/bin/env bash
+
+_placeos_comp() {
+    local cur_="${3-$cur}"
+    local possible="grep "^${cur_}"<<<${1})"
+
+    case "$cur_" in
+    --*=) ;;
+
+    *)
+        local c i=0 IFS=$' \t\n'
+        for c in $possible; do
+            c="$c${4-}"
+            if [[ $c == "$cur_"* ]]; then
+                case $c in
+                --*=* | *.) ;;
+                *) c="$c " ;;
+                esac
+                COMPREPLY[i++]="${2-}$c"
+            fi
+        done
+        ;;
+    esac
+}
+
+_placeos_start() {
+    case "$cur" in
+    -*)
+        __placeos_comp "
+                -v
+                -h
+                --verbose
+                --help
+                --hard-reset
+                --email
+                --password
+                --domain
+                --application
+                --analytics
+                --kibana
+                "
+        return
+        ;;
+    esac
+}
+
+_placeos_stop() {
+    case "$cur" in
+    -*)
+        __placeos_comp "
+                -v
+                -h
+                --verbose
+                --help
+                "
+        return
+        ;;
+    esac
+}
+
+_placeos_task() {
+    case "$cur" in
+    -*)
+        __placeos_comp "
+                -h
+                --help
+                -t
+                --tasks
+                "
+        return
+        ;;
+    *)
+        __placeos_comp "$(placeos task --tasks)"
+        return
+        ;;
+    esac
+}
+
+_placeos_update() {
+
+    case "$cur" in
+    -*)
+        __placeos_comp "
+                -h
+                --help
+                -v
+                --verbose
+                --list
+                "
+        return
+        ;;
+    *)
+        __placeos_comp "$(placeos update --list)"
+        return
+        ;;
+    esac
+}
+
+_placeos_upgrade() {
+    case "$cur" in
+    -*)
+        __placeos_comp "
+                -h
+                --help
+                -v
+                --verbose
+                --list
+                "
+        return
+        ;;
+    *)
+        __placeos_comp "$(placeos upgrade --list)"
+        return
+        ;;
+    esac
+}
+
+_placeos_uninstall() {
+    case "$cur" in
+    -*)
+        __placeos_comp "
+                -h
+                --help
+                --force
+                "
+        return
+        ;;
+    esac
+}
+
+# Plumbing
+###################################################################################################
+
+_placeos() {
+    local cur prev opts
+
+    COMPREPLY=()
+    cur="${COMP_WORDS[COMP_CWORD]}"
+    prev="${COMP_WORDS[COMP_CWORD - 1]}"
+    words=("${COMP_WORDS[@]}")
+    cword=$COMP_CWORD
+
+    echo $cur
+    echo $prev
+    echo $words
+
+    case ${COMP_CWORD} in
+    1)
+        __placeos_comp "
+          start
+          stop
+          update
+          upgrade
+          task
+        "
+        ;;
+    2)
+        case ${prev} in
+        -*) ;;
+
+        start)
+            _placeos_start
+            ;;
+        stop)
+            _placeos_stop
+            ;;
+        update)
+            _placeos_update
+            ;;
+        upgrade)
+            _placeos_upgrade
+            ;;
+        task)
+            _placeos_task
+            ;;
+        esac
+        ;;
+    esac
+
+    return 0
+}
+
+complete -F _placeos placeos
