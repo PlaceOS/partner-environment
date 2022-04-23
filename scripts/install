@@ -1,0 +1,97 @@
+#! /usr/bin/env bash
+# shellcheck disable=1003,1090
+
+set -euo pipefail
+
+# Helpers
+###################################################################################################
+
+PROMPT="░░░"
+
+# Colours
+red='\033[0;31m'
+green='\033[0;32m'
+reset='\033[0m'
+
+unknown_argument() (
+    unknown_arg="${1}"
+    usage="${2}"
+    [ -n "${unknown_arg}" ] && prompt "${red}Unknown option:${reset} ${unknown_arg}"
+    eval "${usage}"
+    exit 1
+)
+
+prompt() (
+    echo -e "${PROMPT} ${1}"
+)
+
+abort() (
+    prompt "${red}${1}${reset}"
+    exit 1
+)
+
+open_url() (
+    url=${1}
+
+    case "$OSTYPE" in
+        darwin*)
+            open "${url}" ;;
+        mysys*)
+            exe /c start "${url/&/^&}" ;;
+        *)
+            if (command -v xdg-open >/dev/null); then
+                xdg-open "${url}"
+            elif (command -v gnome-open >/dev/null); then
+                wslview "${url}"
+            elif (command -v wslview >/dev/null); then
+                wslview "${url}"
+            else
+                echo >&2 "Unsupported platform."
+                return 1
+            fi
+            ;;
+    esac
+)
+
+# Implementation
+####################################################################################################
+
+# 1. Ensures that docker and git are installed
+
+# 2. Clones the repo into `~/.placeos`, or the PLACEOS_HOME environment variable
+
+case "$OSTYPE" in
+    mysys*)
+        SEPARATOR='\'
+        PATH_SEPERATOR=';'
+        ;;
+    *)
+        SEPARATOR='/'
+        PATH_SEPERATOR=':'
+        ;;
+esac
+
+PLACEOS_HOME=${PLACEOS_HOME:-"${HOME}${SEPARATOR}.placeos"}
+git clone --depth=1 https://github.com/place-labs/partner-environment "${PLACEOS_HOME}"
+
+# 3. Add `~/.placeos/.bin` (contains `placeos` command) to PATH
+
+PROFILE_PATH="${HOME}${SEPARATOR}profile"
+PLACEOS_SCRIPTS="${PLACEOS_HOME}${SEPARATOR}.bin"
+installer_comment="# added by PlaceOS installer"
+profile_path_addition="export PATH=\"${PLACEOS_SCRIPTS}${PATH_SEPERATOR}\$PATH\" ${installer_comment}"
+
+if ! grep -q "$installer_comment$" "${PROFILE_PATH}"; then
+    export PATH="${PLACEOS_SCRIPTS}${PATH_SEPERATOR}${PATH}"
+    echo -e "$profile_path_addition" >>"${PROFILE_PATH}"
+fi
+
+# 4. Runs `placeos start`
+
+placeos start
+
+# 5. Uses `open_url` to open browser to PlaceOS Backoffice
+
+open_url "https://localhost:8443/backoffice"
+
+prompt "${green}Installed PlaceOS.${reset}"
