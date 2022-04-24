@@ -82,9 +82,11 @@ installer_comment="# added by PlaceOS installer"
 profile_path_addition="export PATH=\"${PLACEOS_SCRIPTS}${PATH_SEPERATOR}\$PATH\" ${installer_comment}"
 
 if ! grep -q "$installer_comment$" "${PROFILE_PATH}"; then
-    export PATH="${PLACEOS_SCRIPTS}${PATH_SEPERATOR}${PATH}"
+    echo -e "$profile_path_addition"
     echo -e "$profile_path_addition" >>"${PROFILE_PATH}"
 fi
+
+source "${PROFILE_PATH}"
 
 # 4. Runs `placeos start`
 
