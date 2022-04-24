@@ -24,12 +24,12 @@ See the [PlaceOS Drivers repository](https://github.com/PlaceOS/drivers) for fur
     --location \
     --show-error --silent \
     --fail \
-    https://raw.githubusercontent.com/PlaceOS/partner-environment/master/scripts/install | sh
+    https://raw.githubusercontent.com/PlaceOS/partner-environment/master/scripts/install | bash
   ```
 
 - Via `wget`:
   ```shell-session
-  wget -O - https://raw.githubusercontent.com/PlaceOS/partner-environment/master/scripts/install | sh
+  wget -O - https://raw.githubusercontent.com/PlaceOS/partner-environment/master/scripts/install | bash
   ```
 
 ### Dependencies
