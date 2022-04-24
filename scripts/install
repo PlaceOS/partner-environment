@@ -1,5 +1,5 @@
 #! /usr/bin/env bash
-# shellcheck disable=1003,1090
+# shellcheck disable=1003,1090,2016
 
 set -euo pipefail
 
@@ -28,6 +28,12 @@ prompt() (
 abort() (
     prompt "${red}${1}${reset}"
     exit 1
+)
+
+ensure_command() (
+    if ! command -v "$1"&> /dev/null; then
+        abort "$1 not installed on this system."
+    fi
 )
 
 open_url() (
@@ -61,6 +67,10 @@ open_url() (
 
 # 1. Ensures that docker and git are installed
 
+ensure_command 'git'
+ensure_command 'docker'
+ensure_command 'docker-compose'
+
 # 2. Clones the repo into `~/.placeos`, or the PLACEOS_HOME environment variable
 
 case "$OSTYPE" in
@@ -76,6 +86,9 @@ esac
 
 PLACEOS_HOME=${PLACEOS_HOME:-"${HOME}${SEPARATOR}.placeos"}
 PLACEOS_PARTNER_ENV_BRANCH=${PLACEOS_PARTNER_ENV_BRANCH:-"master"}
+
+prompt "Cloning PlaceOS Partner Environment <${PLACEOS_PARTNER_ENV_BRANCH}> into ${PLACEOS_HOME}..."
+
 git clone --branch "${PLACEOS_PARTNER_ENV_BRANCH}" --depth=1 https://github.com/PlaceOS/partner-environment "${PLACEOS_HOME}"
 
 # 3. Add `~/.placeos/bin` (contains `placeos` command) to PATH
@@ -86,6 +99,7 @@ installer_comment="# added by PlaceOS installer"
 profile_path_addition="export PATH=\"${PLACEOS_SCRIPTS}${PATH_SEPERATOR}\$PATH\" ${installer_comment}"
 
 if ! grep -q "$installer_comment$" "${PROFILE_PATH}"; then
+    prompt "Adding $PLACEOS_SCRIPTS to \$PATH..."
     echo -e "$profile_path_addition"
     echo -e "$profile_path_addition" >>"${PROFILE_PATH}"
 fi
@@ -94,7 +108,8 @@ source "${PROFILE_PATH}"
 
 # 4. Runs `placeos start`
 
-${PLACEOS_HOME}/placeos start
+prompt 'Running `placeos start`'
+"${PLACEOS_HOME}/placeos" start
 
 # 5. Uses `open_url` to open browser to PlaceOS Backoffice
 

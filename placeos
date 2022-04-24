@@ -31,16 +31,16 @@ load_environment() {
     if [[ $PLACEOS_TAG =~ ^placeos-[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
 
         if [[ $PLACEOS_TAG < "placeos-1.2108.2" ]]; then
-            PLACE_STAFF_API_TAG="nightly"
-            PLACE_NGINX_TAG="staff-api"
+            export PLACE_STAFF_API_TAG="nightly"
+            export PLACE_NGINX_TAG="staff-api"
         fi
 
         if [[ $PLACEOS_TAG < "placeos-1.2109.0" ]]; then
-            PLACE_FRONTEND_LOADER_IMAGE="frontends"
+            export PLACE_FRONTEND_LOADER_IMAGE="frontends"
         fi
 
         if [[ $PLACEOS_TAG < "placeos-1.2111.0" ]]; then
-            PLACE_SEARCH_INGEST_IMAGE="rubber-soul"
+            export PLACE_SEARCH_INGEST_IMAGE="rubber-soul"
         fi
     fi
 
@@ -69,7 +69,7 @@ source "${base_path}/scripts/spinner.sh"
 mkdir -p "${base_path}/.logs"
 logfile="${base_path}/.logs/$(date +"%Y%m%d%H%M").log"
 
-COMPOSE_PROJECT_NAME=placeos
+export COMPOSE_PROJECT_NAME=placeos
 
 # Helpers
 ###################################################################################################
@@ -174,7 +174,7 @@ start_environment() (
     email_argument=""
     password_argument=""
     domain_argument=""
-    application_argument=""
+    # application_argument=""
     while [ ${#} -gt 0 ]; do
         command="${1}"
         shift
@@ -202,10 +202,10 @@ start_environment() (
             domain_argument="${1}"
             shift
             ;;
-        --application)
-            application_arguement="${1}"
-            shift
-            ;;
+        # --application)
+        #     application_arguement="${1}"
+        #     shift
+        #     ;;
         --analytics)
             enable_analytics=true
             ;;
@@ -254,11 +254,11 @@ start_environment() (
     fi
 
     if [ -n "${domain_argument}" ]; then
-        PLACE_DOMAIN=${domain_argument}
+        export PLACE_DOMAIN=${domain_argument}
     fi
 
     if [ -n "${application_argument}" ]; then
-        PLACE_APPLICATION=${application_argument}
+        export PLACE_APPLICATION=${application_argument}
     fi
 
     # Attempt to set the username to that in git config if username not in env
@@ -426,6 +426,7 @@ task() (
         exit 0
     fi
 
+    # shellcheck disable=2086
     ./scripts/run-sam-task ${PARAMS}
 )
 

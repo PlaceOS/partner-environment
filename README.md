@@ -20,11 +20,17 @@ See the [PlaceOS Drivers repository](https://github.com/PlaceOS/drivers) for fur
 - Via `curl`:
   ```shell-session
   curl \
-    --proto '=https' --tlsv1.2 \
-    --location \
-    --show-error --silent \
-    --fail \
+    --proto '=https' --tlsv1.2 \ # Enforce strict HTTPS
+    --location \                 # Follow redirects
+    --show-error --silent \      # Show an error message on failure
+    --fail \                     # Fail on HTTP errors
     https://raw.githubusercontent.com/PlaceOS/partner-environment/master/scripts/install | bash
+  ```
+
+  In other words...
+
+  ```shell-session
+  curl --proto '=https' --tlsv1.2 -LsSf https://raw.githubusercontent.com/PlaceOS/partner-environment/master/scripts/install | bash
   ```
 
 - Via `wget`:
