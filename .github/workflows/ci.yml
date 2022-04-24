@@ -49,7 +49,7 @@ jobs:
           --location \
           --silent \
           --fail \
-          https://raw.githubusercontent.com/PlaceOS/partner-environment/${{ github.sha }}/scripts/install | sh
+          https://raw.githubusercontent.com/PlaceOS/partner-environment/${{ github.sha }}/scripts/install | bash
         env:
           PLACEOS_TAG: ${{ matrix.version }}
           PLACE_EMAIL: robot@place.tech
