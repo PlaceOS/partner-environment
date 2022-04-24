@@ -42,6 +42,7 @@ jobs:
             echo "Navigated to ${1}"
           )
 
+          PLACEOS_PARTNER_ENV_BRANCH="${GITHUB_REF#refs/heads/}" \
           curl \
           --proto '=https' \
           --tlsv1.2 \
