@@ -174,7 +174,7 @@ start_environment() (
     email_argument=""
     password_argument=""
     domain_argument=""
-    # application_argument=""
+    application_argument=""
     while [ ${#} -gt 0 ]; do
         command="${1}"
         shift
@@ -202,10 +202,10 @@ start_environment() (
             domain_argument="${1}"
             shift
             ;;
-        # --application)
-        #     application_arguement="${1}"
-        #     shift
-        #     ;;
+        --application)
+            application_argument="${1}"
+            shift
+            ;;
         --analytics)
             enable_analytics=true
             ;;
