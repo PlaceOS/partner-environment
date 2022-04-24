@@ -76,8 +76,8 @@ git clone --depth=1 https://github.com/place-labs/partner-environment "${PLACEOS
 
 # 3. Add `~/.placeos/.bin` (contains `placeos` command) to PATH
 
-PROFILE_PATH="${HOME}${SEPARATOR}profile"
-PLACEOS_SCRIPTS="${PLACEOS_HOME}${SEPARATOR}.bin"
+PROFILE_PATH="${HOME}${SEPARATOR}.profile"
+PLACEOS_SCRIPTS="${PLACEOS_HOME}${SEPARATOR}bin"
 installer_comment="# added by PlaceOS installer"
 profile_path_addition="export PATH=\"${PLACEOS_SCRIPTS}${PATH_SEPERATOR}\$PATH\" ${installer_comment}"
 

@@ -6,7 +6,7 @@ on:
 
 jobs:
   test-install:
-    name: "Install: ${{ !matrix.stable && '🚧 ' || '' }}version: ${{ matrix.version != '' && matrix.version || 'empty'}}, os: ${{ matrix.os }}"
+    name: "Install ${{ !matrix.stable && '🚧 ' || '' }}- os: ${{ matrix.os }}"
     runs-on: ${{ matrix.os }}
     continue-on-error: ${{ !matrix.stable }}
     strategy:
@@ -38,14 +38,25 @@ jobs:
         name: Install PlaceOS
         shell: bash
         run: |
-          curl --proto '=https' --tlsv1.2 --show-error --location --silent --fail https://raw.githubusercontent.com/place-labs/partner-environment/master/.scripts/install | sh
+          open () (
+            echo "Navigated to ${1}"
+          )
+
+          curl \
+          --proto '=https' \
+          --tlsv1.2 \
+          --show-error \
+          --location \
+          --silent \
+          --fail \
+          https://raw.githubusercontent.com/PlaceOS/partner-environment/${{ github.sha }}/scripts/install | sh
         env:
           PLACEOS_TAG: ${{ matrix.version }}
           PLACE_EMAIL: robot@place.tech
           PLACE_PASSWORD: development
 
   test-start:
-    name: "Start: ${{ !matrix.stable && '🚧 ' || '' }}version: ${{ matrix.version != '' && matrix.version || 'empty'}}, os: ${{ matrix.os }}"
+    name: "Start ${{ !matrix.stable && '🚧 ' || '' }}- version: ${{ matrix.version != '' && matrix.version || 'empty'}}, os: ${{ matrix.os }}"
     runs-on: ${{ matrix.os }}
     continue-on-error: ${{ !matrix.stable }}
     strategy:
@@ -70,7 +81,7 @@ jobs:
             stable: false
             os: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Test initialization
         run: ./placeos start --verbose
         env:
