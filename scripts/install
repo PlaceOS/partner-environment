@@ -76,7 +76,7 @@ esac
 
 PLACEOS_HOME=${PLACEOS_HOME:-"${HOME}${SEPARATOR}.placeos"}
 PLACEOS_PARTNER_ENV_BRANCH=${PLACEOS_PARTNER_ENV_BRANCH:-"master"}
-git clone -b "${PLACEOS_PARTNER_ENV_BRANCH}" --depth=1 https://github.com/PlaceOS/partner-environment "${PLACEOS_HOME}"
+git clone --branch "${PLACEOS_PARTNER_ENV_BRANCH}" --depth=1 https://github.com/PlaceOS/partner-environment "${PLACEOS_HOME}"
 
 # 3. Add `~/.placeos/bin` (contains `placeos` command) to PATH
 

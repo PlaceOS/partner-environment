@@ -38,7 +38,8 @@ jobs:
         name: Install PlaceOS
         shell: bash
         run: |
-          PLACEOS_PARTNER_ENV_BRANCH="${GITHUB_REF#refs/heads/}" \
+          PLACEOS_PARTNER_ENV_BRANCH="${GITHUB_REF#refs/heads/}"
+          echo $PLACEOS_PARTNER_ENV_BRANCH
           curl \
           --proto '=https' \
           --tlsv1.2 \
@@ -49,7 +50,6 @@ jobs:
           https://raw.githubusercontent.com/PlaceOS/partner-environment/${{ github.sha }}/scripts/install | bash
         env:
           PLACEOS_SKIP_INSTALL_OPEN: true
-          PLACEOS_TAG: ${{ matrix.version }}
           PLACE_EMAIL: robot@place.tech
           PLACE_PASSWORD: development
 
