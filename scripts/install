@@ -32,25 +32,28 @@ abort() (
 
 open_url() (
     url=${1}
+    PLACEOS_SKIP_INSTALL_OPEN="${PLACEOS_SKIP_INSTALL_OPEN:-"false"}"
 
-    case "$OSTYPE" in
-        darwin*)
-            open "${url}" ;;
-        mysys*)
-            exe /c start "${url/&/^&}" ;;
-        *)
-            if (command -v xdg-open >/dev/null); then
-                xdg-open "${url}"
-            elif (command -v gnome-open >/dev/null); then
-                wslview "${url}"
-            elif (command -v wslview >/dev/null); then
-                wslview "${url}"
-            else
-                echo >&2 "Unsupported platform."
-                return 1
-            fi
-            ;;
-    esac
+    if [[ $PLACEOS_SKIP_INSTALL_OPEN == "false" ]]; then
+        case "$OSTYPE" in
+            darwin*)
+                open "${url}" ;;
+            mysys*)
+                exe /c start "${url/&/^&}" ;;
+            *)
+                if (command -v xdg-open >/dev/null); then
+                    xdg-open "${url}"
+                elif (command -v gnome-open >/dev/null); then
+                    wslview "${url}"
+                elif (command -v wslview >/dev/null); then
+                    wslview "${url}"
+                else
+                    echo >&2 "Unsupported platform."
+                    return 1
+                fi
+                ;;
+        esac
+    fi
 )
 
 # Implementation
@@ -91,7 +94,7 @@ source "${PROFILE_PATH}"
 
 # 4. Runs `placeos start`
 
-placeos start
+${PLACEOS_HOME}/placeos start
 
 # 5. Uses `open_url` to open browser to PlaceOS Backoffice
 
