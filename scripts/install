@@ -54,8 +54,7 @@ open_url() (
                 elif (command -v wslview >/dev/null); then
                     wslview "${url}"
                 else
-                    echo >&2 "Unsupported platform."
-                    return 1
+                    abort "Unsupported platform."
                 fi
                 ;;
         esac
@@ -89,7 +88,7 @@ PLACEOS_PARTNER_ENV_BRANCH=${PLACEOS_PARTNER_ENV_BRANCH:-"master"}
 
 prompt "Cloning PlaceOS Partner Environment <${PLACEOS_PARTNER_ENV_BRANCH}> into ${PLACEOS_HOME}..."
 
-git clone --branch "${PLACEOS_PARTNER_ENV_BRANCH}" --depth=1 https://github.com/PlaceOS/partner-environment "${PLACEOS_HOME}"
+git clone --quiet --branch "${PLACEOS_PARTNER_ENV_BRANCH}" --depth=1 https://github.com/PlaceOS/partner-environment "${PLACEOS_HOME}"
 
 # 3. Add `~/.placeos/bin` (contains `placeos` command) to PATH
 
@@ -100,7 +99,6 @@ profile_path_addition="export PATH=\"${PLACEOS_SCRIPTS}${PATH_SEPERATOR}\$PATH\"
 
 if ! grep -q "$installer_comment$" "${PROFILE_PATH}"; then
     prompt "Adding $PLACEOS_SCRIPTS to \$PATH..."
-    echo -e "$profile_path_addition"
     echo -e "$profile_path_addition" >>"${PROFILE_PATH}"
 fi
 
