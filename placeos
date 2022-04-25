@@ -1,6 +1,8 @@
 #! /usr/bin/env bash
 # shellcheck disable=1003,1090
 
+PRODUCT="PlaceOS Partner Environment"
+
 banner() (
     echo
     echo '░░░░░░░\  ░░\                                ░░░░░░\   ░░░░░░\'
@@ -141,7 +143,7 @@ hard_reset() (
         "Failed to drop Elasticsearch indices."
 
     run_or_abort \
-        'docker-compose restart nginx' \
+        "docker-compose --project-directory='${base_path}' restart nginx" \
         "Restarting nginx..." \
         "Failed to restart nginx." \
         "true"
@@ -151,7 +153,7 @@ start_environment__usage() (
     cat <<EOF
 Usage: ./placeos start [-h|--help]
 
-Start the PlaceOS environment.
+Start the ${PRODUCT}.
 
 Arguments:
     --hard-reset            Reset the environment to a default state.
@@ -315,7 +317,7 @@ start_environment() (
         "Failed to generate secrets."
 
     run_or_abort \
-        "docker-compose ${PROFILES} pull -q" \
+        "docker-compose --project-directory='${base_path}' ${PROFILES} pull -q" \
         "Pulling images..." \
         "Failed to pull images."
 
@@ -327,7 +329,7 @@ start_environment() (
         "Failed to create user entity."
 
     run_or_abort \
-        "docker-compose ${PROFILES} up -d" \
+        "docker-compose --project-directory='${base_path}' ${PROFILES} up -d" \
         "Bringing up services..." \
         "Failed to start services."
 
@@ -350,7 +352,7 @@ stop_environment__usage() (
     cat <<EOF
 Usage: ./placeos stop [-h|--help]
 
-Stop the PlaceOS environment.
+Stop the ${PRODUCT}.
 
 Arguments:
     -v, --verbose           Write logs to STDOUT in addition to the log file.
@@ -377,7 +379,7 @@ stop_environment() (
     done
 
     run_or_abort \
-        "docker-compose down --remove-orphans" \
+        "docker-compose --project-directory='${base_path}' down --remove-orphans" \
         "Tearing down PlaceOS" \
         "Failed to teardown PlaceOS"
 )
@@ -389,7 +391,7 @@ task__usage() (
     cat <<EOF
 Usage: ./placeos task [-h|--help|help] [-t|--task] <task> [help|...] [arguments...]
 
-Run a task in the PlaceOS environment.
+Run a task in the ${PRODUCT}.
 
 Arguments:
     -h, --help              Display this message.
@@ -558,7 +560,7 @@ update_environment() (
 
     if [[ $restart_services == "true" ]]; then
         run_or_abort \
-            "docker-compose restart" \
+            "docker-compose --project-directory='${base_path}' restart" \
             "Restarting services on ${version}..." \
             "Failed to restart services"
     fi
@@ -583,7 +585,7 @@ upgrade_environment__usage() (
     cat <<EOF
 Usage: ./placeos upgrade [-h|--help] [VERSION]
 
-Upgrades the PlaceOS Partner Environment.
+Upgrades the ${PRODUCT}.
 If VERSION is omitted, defaults to the latest version.
 
 Arguments:
@@ -651,15 +653,15 @@ upgrade_environment() (
     else
         run_or_abort \
             "git checkout --quiet $version" \
-            "Upgrading PlaceOS Partner Environment..." \
-            "Failed to upgrade PlaceOS Partner Environment"
+            "Upgrading ${PRODUCT}..." \
+            "Failed to upgrade ${PRODUCT}"
     fi
 
     # Check if it was really updated or not
     if [[ "$(git rev-parse HEAD)" = "$last_commit" ]]; then
-        prompt "PlaceOS Partner Environment is already at $version"
+        prompt "${PRODUCT} is already at $version"
     else
-        prompt "PlaceOS Partner Environment is now at $version"
+        prompt "${PRODUCT} is now at $version"
     fi
 )
 
@@ -712,10 +714,33 @@ uninstall_environment() (
         esac
     fi
 
-    # Stop environment.
-    # Remove PlaceOS containers.
+    # Stop environment and remove containers, volumes, and images.
+    run_or_abort \
+        "docker-compose --project-directory='${base_path}' down --volumes --networks --rmi all" \
+        "Stopping ${PRODUCT}..." \
+        "Failed to stop ${PRODUCT}"
+
     # Remove scripts from paths.
+    run_or_abort \
+        "sed -i '.bak' -E 's/^.*# added by PlaceOS installer$//g' \"${HOME}/.profile\"" \
+        "Removing PlaceOS from $bold.profile$normal..." \
+        "Failed to remove PlaceOS from $bold.profile$normal"
+
     # Delete the installation path.
+    PLACEOS_HOME="${PLACEOS_HOME:-"$HOME/.placeos"}"
+    if [ "${force}" == "false" ]; then
+        read -rp "${PROMPT} $(echo -e "${red}Warning:${reset}") Removing ${bold}${PLACEOS_HOME}${normal}. Would you like to continue (y/n)? " choice
+        case "${choice}" in
+        y | Y | YES | yes) ;;
+
+        *)
+            abort "Exiting."
+            ;;
+        esac
+    fi
+    rm -rf "$PLACEOS_HOME"
+
+    prompt "${green}Uninstalled PlaceOS${reset}"
 )
 
 # Root Command
@@ -725,7 +750,7 @@ usage() (
     cat <<EOF
 Usage: ./placeos [-h|--help] [command]
 
-Helper script for interfacing with the PlaceOS Partner Environment.
+Helper script for interfacing with the ${PRODUCT}.
 
 Command:
     start                   Start the environment.
