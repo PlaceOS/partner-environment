@@ -4,12 +4,34 @@
 
 [![CI](https://github.com/PlaceOS/partner-environment/actions/workflows/ci.yml/badge.svg)](https://github.com/PlaceOS/partner-environment/actions/workflows/ci.yml)
 
-For use when testing, improving or experimenting with PlaceOS on a local machine.
-Use it for driver, frontend, api and infrastructure development. **Treat it as insecure**.
+For use when testing, improving or experimenting with PlaceOS on a local machine.  
+Use it for driver, frontend, api and infrastructure development.
 
-When finished dev work for the day, stop the containers with `placeos stop`
+**Treat it as insecure** as it is *NOT* intended for production use...
 
-*NOT* for production use.
+## Table of Contents
+
+<!-- Generated with `mdtoc --inplace` -->
+<!-- See https://github.com/kubernetes-sigs/mdtoc -->
+<!-- toc -->
+- [PlaceOS Partner Environment](#placeos-partner-environment)
+  - [Table of Contents](#table-of-contents)
+  - [Drivers](#drivers)
+  - [Installation](#installation)
+    - [Dependencies](#dependencies)
+      - [Optional tools](#optional-tools)
+    - [MacOS](#macos)
+  - [Configuration](#configuration)
+  - [Usage](#usage)
+    - [`$ placeos`](#-placeos)
+    - [`$ placeos start`](#-placeos-start)
+    - [`$ placeos stop`](#-placeos-stop)
+    - [`$ placeos task`](#-placeos-task)
+    - [`$ placeos update`](#-placeos-update)
+    - [`$ placeos upgrade`](#-placeos-upgrade)
+    - [`$ placeos uninstall`](#-placeos-uninstall)
+  - [Service Graph](#service-graph)
+<!-- /toc -->
 
 ## Drivers
 
@@ -65,6 +87,8 @@ Bumping the resource limit to 4GB should be sufficient.
 These environment variables can also be passed via the cli.
 
 ## Usage
+
+When finished, stop the environment's containers with `placeos stop`.
 
 ### `$ placeos`
 
