@@ -86,7 +86,7 @@ Command:
 ### `$ placeos start`
 
 ```shell-session
-Usage: placeos start [-h|--help]
+Usage: placeos start [-h|--help] [flags...]
 
 Start the PlaceOS environment.
 
@@ -124,10 +124,10 @@ Arguments:
     -h, --help              Display this message.
 ```
 
-### `placeos update`
+### `$ placeos update`
 
 ```
-Usage: placeos update [-h|--help] [VERSION]
+Usage: placeos update [-h|--help] [flags...] [VERSION]
 
 Modifies PLACEOS_TAG to the selected PlaceOS platform version.
 If VERSION is omitted, defaults to the most recent stable version.
@@ -138,10 +138,10 @@ Arguments:
     -h, --help              Display this message.
 ```
 
-### `placeos upgrade`
+### `$ placeos upgrade`
 
 ```
-Usage: placeos upgrade [-h|--help] [VERSION]
+Usage: placeos upgrade [-h|--help] [flags...] [VERSION]
 
 Upgrades the PlaceOS Partner Environment.
 If VERSION is omitted, defaults to the most recent stable version.
@@ -155,7 +155,7 @@ Arguments:
 ### `$ placeos uninstall`
 
 ```shell-session
-Usage: placeos uninstall
+Usage: placeos uninstall [-h|--help] [--force]
 
 Removes PlaceOS containers, removes scripts from paths, and finally deletes the installation path.
 
