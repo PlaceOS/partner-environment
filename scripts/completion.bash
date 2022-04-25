@@ -1,8 +1,8 @@
 #! /usr/bin/env bash
 
-_placeos_comp() {
+__placeos_comp() {
     local cur_="${3-$cur}"
-    local possible="grep "^${cur_}"<<<${1})"
+    local possible="$(grep "^${cur_}"<<<${1})"
 
     case "$cur_" in
     --*=) ;;
