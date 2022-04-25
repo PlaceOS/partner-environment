@@ -8,7 +8,7 @@ set -euo pipefail
 trap 'tput cnorm; pkill -P $$;' SIGINT SIGTERM
 
 # Name of the environment
-PRODUCT="PlaceOS Partner Environment"
+PLACEOS_PRODUCT="PlaceOS Partner Environment"
 
 # Whether to write to STDOUT or not
 VERBOSE="${VERBOSE:-"false"}"
@@ -154,7 +154,7 @@ start_environment__usage() (
     cat <<EOF
 Usage: ./placeos start [-h|--help]
 
-Start the ${PRODUCT}.
+Start the ${PLACEOS_PRODUCT}.
 
 Arguments:
     --hard-reset            Reset the environment to a default state.
@@ -183,7 +183,7 @@ start_environment() (
         shift
         case ${command} in
         --hard-reset)
-            read -rp "${PROMPT} $(echo -e "${red}Warning:${reset}") This will reset your environment. Would you like to continue (y/n)? " choice
+            read -rp "${PROMPT} $(echo -e "${yellow}Warning:${reset}") This will reset your environment. Would you like to continue (y/n)? " choice
             case "${choice}" in
             y | Y | YES | yes)
                 hard_reset=true
@@ -232,7 +232,7 @@ start_environment() (
 
     load_environment
 
-    prompt "Starting PlaceOS <${PLACEOS_TAG}>"
+    prompt "Starting $PLACEOS_PRODUCT <${PLACEOS_TAG}>"
 
     if [[ $VERBOSE == "false" ]]; then
         prompt "For detailed logging, run..."
@@ -326,7 +326,7 @@ start_environment() (
 
     run_or_abort \
         "${base_path}/scripts/run-init-container" \
-        "Initialising PlaceOS with default domain ($PLACE_DOMAIN)..." \
+        "Initialising $PLACEOS_PRODUCT with default domain ($PLACE_DOMAIN)..." \
         "Failed to create user entity."
 
     run_or_abort \
@@ -341,7 +341,7 @@ start_environment() (
             "Failed to configure InfluxDB."
     fi
 
-    prompt "${green}PlaceOS initialised!${reset}"
+    prompt "${green}$PLACEOS_PRODUCT initialised!${reset}"
     prompt "Login to https://$PLACE_DOMAIN/backoffice/ with..."
     prompt "${yellow}$PLACE_EMAIL${reset}:${yellow}$PLACE_PASSWORD${reset}"
 )
@@ -353,7 +353,7 @@ stop_environment__usage() (
     cat <<EOF
 Usage: ./placeos stop [-h|--help]
 
-Stop the ${PRODUCT}.
+Stop the ${PLACEOS_PRODUCT}.
 
 Arguments:
     -v, --verbose           Write logs to STDOUT in addition to the log file.
@@ -381,8 +381,8 @@ stop_environment() (
 
     run_or_abort \
         "docker-compose --project-directory='${base_path}' down --remove-orphans" \
-        "Tearing down PlaceOS" \
-        "Failed to teardown PlaceOS"
+        "Tearing down $PLACEOS_PRODUCT" \
+        "Failed to teardown $PLACEOS_PRODUCT"
 )
 
 # Task
@@ -392,7 +392,7 @@ task__usage() (
     cat <<EOF
 Usage: ./placeos task [-h|--help|help] [-t|--task] <task> [help|...] [arguments...]
 
-Run a task in the ${PRODUCT}.
+Run a task in the ${PLACEOS_PRODUCT}.
 
 Arguments:
     -h, --help              Display this message.
@@ -586,11 +586,11 @@ upgrade_environment__usage() (
     cat <<EOF
 Usage: ./placeos upgrade [-h|--help] [VERSION]
 
-Upgrades the ${PRODUCT}.
+Upgrades the ${PLACEOS_PRODUCT}.
 If VERSION is omitted, defaults to the latest version.
 
 Arguments:
-    --list                  Lists versions of the ${PRODUCT}.
+    --list                  Lists versions of the ${PLACEOS_PRODUCT}.
     -q, --quiet             Do not write command logs to STDOUT.
     -h, --help              Display this message.
 EOF
@@ -654,15 +654,15 @@ upgrade_environment() (
     else
         run_or_abort \
             "git checkout --quiet $version" \
-            "Upgrading ${PRODUCT}..." \
-            "Failed to upgrade ${PRODUCT}"
+            "Upgrading ${PLACEOS_PRODUCT}..." \
+            "Failed to upgrade ${PLACEOS_PRODUCT}"
     fi
 
     # Check if it was really updated or not
     if [[ "$(git rev-parse HEAD)" = "$last_commit" ]]; then
-        prompt "${PRODUCT} is already at $version"
+        prompt "${PLACEOS_PRODUCT} is already at $version"
     else
-        prompt "${PRODUCT} is now at $version"
+        prompt "${PLACEOS_PRODUCT} is now at $version"
     fi
 )
 
@@ -673,7 +673,7 @@ uninstall_environment__usage() (
     cat <<EOF
 Usage: placeos uninstall
 
-Removes PlaceOS containers, removes scripts from paths, and finally deletes the installation path.
+Removes $PLACEOS_PRODUCT containers, removes scripts from paths, and finally deletes the installation path.
 
 Arguments:
     --force                 Skip confirmation of uninstall.
@@ -705,7 +705,7 @@ uninstall_environment() (
     # Get confirmation.
 
     if [ "${force}" == "false" ]; then
-        read -rp "${PROMPT} $(echo -e "${red}Warning:${reset}") This will remove your PlaceOS installation. Would you like to continue (y/n)? " choice
+        read -rp "${PROMPT} $(echo -e "${yellow}Warning:${reset}") This will remove your $PLACEOS_PRODUCT installation. Would you like to continue (y/n)? " choice
         case "${choice}" in
         y | Y | YES | yes) ;;
 
@@ -718,19 +718,21 @@ uninstall_environment() (
     # Stop environment and remove containers, volumes, and images.
     run_or_abort \
         "docker-compose --project-directory='${base_path}' down --volumes --networks --rmi all" \
-        "Stopping ${PRODUCT}..." \
-        "Failed to stop ${PRODUCT}"
+        "Stopping ${PLACEOS_PRODUCT}..." \
+        "Failed to stop ${PLACEOS_PRODUCT}"
+
+    PROFILE_PATH="${PROFILE_PATH:-"${HOME}/.profile"}"
 
     # Remove scripts from paths.
     run_or_abort \
-        "sed -i '.bak' -E 's/^.*# added by PlaceOS installer$//g' \"${HOME}/.profile\"" \
-        "Removing PlaceOS from $bold.profile$normal..." \
-        "Failed to remove PlaceOS from $bold.profile$normal"
+        "sed -i '.bak' -E 's/^.*# added by PlaceOS installer$//g' \"${PROFILE_PATH}\"" \
+        "Removing $PLACEOS_PRODUCT from ${bold}${PROFILE_PATH}${normal}..." \
+        "Failed to remove $PLACEOS_PRODUCT from ${bold}${PROFILE_PATH}${normal}"
 
     # Delete the installation path.
     PLACEOS_HOME="${PLACEOS_HOME:-"$HOME/.placeos"}"
     if [ "${force}" == "false" ]; then
-        read -rp "${PROMPT} $(echo -e "${red}Warning:${reset}") Removing ${bold}${PLACEOS_HOME}${normal}. Would you like to continue (y/n)? " choice
+        read -rp "${PROMPT} $(echo -e "${yellow}Warning:${reset}") Removing ${bold}${PLACEOS_HOME}${normal}. Would you like to continue (y/n)? " choice
         case "${choice}" in
         y | Y | YES | yes) ;;
 
@@ -741,7 +743,7 @@ uninstall_environment() (
     fi
     rm -rf "$PLACEOS_HOME"
 
-    prompt "${green}Uninstalled PlaceOS${reset}"
+    prompt "${green}Uninstalled $PLACEOS_PRODUCT${reset}"
 )
 
 # Root Command
@@ -751,15 +753,15 @@ usage() (
     cat <<EOF
 Usage: ./placeos [-h|--help] [command]
 
-Helper script for interfacing with the ${PRODUCT}.
+Helper script for interfacing with the ${PLACEOS_PRODUCT}.
 
 Command:
     start                   Start the environment.
     stop                    Stops the environment.
     task                    Runs a task in the environment.
     update                  Update the platform version.
-    upgrade                 Upgrade the ${PRODUCT}.
-    uninstall               Uninstalls the ${PRODUCT}.
+    upgrade                 Upgrade the ${PLACEOS_PRODUCT}.
+    uninstall               Uninstalls the ${PLACEOS_PRODUCT}.
     help                    Display this message.
 
 Arguments:

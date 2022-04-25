@@ -3,10 +3,31 @@
 
 set -euo pipefail
 
+# Configuration
+###################################################################################################
+
+case "$OSTYPE" in
+    mysys*)
+        SEPARATOR='\'
+        PATH_SEPERATOR=';'
+        ;;
+    *)
+        SEPARATOR='/'
+        PATH_SEPERATOR=':'
+        ;;
+esac
+
+PLACEOS_HOME=${PLACEOS_HOME:-"${HOME}${SEPARATOR}.placeos"}
+PLACEOS_SCRIPTS="${PLACEOS_HOME}${SEPARATOR}bin"
+PROFILE_PATH="${HOME}${SEPARATOR}.profile"
+
+PLACEOS_PRODUCT="PlaceOS Partner Environment"
+PLACEOS_PRODUCT_BRANCH=${PLACEOS_PRODUCT_BRANCH:-"master"}
+PLACEOS_PRODUCT_REPO="https://github.com/PlaceOS/partner-environment"
+
 # Helpers
 ###################################################################################################
 
-PRODUCT="PlaceOS Partner Environment"
 PROMPT="░░░"
 
 # Colours
@@ -75,28 +96,12 @@ ensure_command 'docker-compose'
 
 # 2. Clones the repo into `~/.placeos`, or the PLACEOS_HOME environment variable
 
-case "$OSTYPE" in
-    mysys*)
-        SEPARATOR='\'
-        PATH_SEPERATOR=';'
-        ;;
-    *)
-        SEPARATOR='/'
-        PATH_SEPERATOR=':'
-        ;;
-esac
+prompt "Cloning ${PLACEOS_PRODUCT} <${PLACEOS_PRODUCT_BRANCH}> into ${bold}${PLACEOS_HOME}${normal}..."
 
-PLACEOS_HOME=${PLACEOS_HOME:-"${HOME}${SEPARATOR}.placeos"}
-PLACEOS_PARTNER_ENV_BRANCH=${PLACEOS_PARTNER_ENV_BRANCH:-"master"}
-
-prompt "Cloning ${PRODUCT} <${PLACEOS_PARTNER_ENV_BRANCH}> into ${bold}${PLACEOS_HOME}${normal}..."
-
-git clone --quiet --branch "${PLACEOS_PARTNER_ENV_BRANCH}" --depth=1 https://github.com/PlaceOS/partner-environment "${PLACEOS_HOME}"
+git clone --quiet --branch "${PLACEOS_PRODUCT_BRANCH}" --depth=1 "${PLACEOS_PRODUCT_REPO}" "${PLACEOS_HOME}"
 
 # 3. Add `~/.placeos/bin` (contains `placeos` command) to PATH
 
-PROFILE_PATH="${HOME}${SEPARATOR}.profile"
-PLACEOS_SCRIPTS="${PLACEOS_HOME}${SEPARATOR}bin"
 installer_comment="# added by PlaceOS installer"
 profile_path_addition="export PATH=\"${PLACEOS_SCRIPTS}${PATH_SEPERATOR}\$PATH\" ${installer_comment}"
 
@@ -116,4 +121,4 @@ prompt 'Running `placeos start`'
 
 open_url "https://localhost:8443/backoffice"
 
-prompt "${green}Installed PlaceOS.${reset}"
+prompt "${green}Installed $PLACEOS_PRODUCT.${reset}"
