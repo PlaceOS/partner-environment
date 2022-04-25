@@ -1,7 +1,17 @@
 #! /usr/bin/env bash
 # shellcheck disable=1003,1090
 
+# The bash hail mary (exit on failure, unset variables, fail pipe composition early)
+set -euo pipefail
+
+# Kill child processes on signals
+trap 'tput cnorm; pkill -P $$;' SIGINT SIGTERM
+
+# Name of the environment
 PRODUCT="PlaceOS Partner Environment"
+
+# Whether to write to STDOUT or not
+VERBOSE="${VERBOSE:-"false"}"
 
 banner() (
     echo
@@ -51,15 +61,6 @@ load_environment() {
     rm "${ext_env}"
     unset ext_env
 }
-
-# The bash hail mary (exit on failure, unset variables, fail pipe composition early)
-set -euo pipefail
-
-# Kill child processes on signals
-trap 'tput cnorm; pkill -P $$;' SIGINT SIGTERM
-
-# Whether to write to STDOUT or not
-VERBOSE="false"
 
 # Path of directory containing the script
 base_path="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"

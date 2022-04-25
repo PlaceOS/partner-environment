@@ -45,6 +45,7 @@ jobs:
           )"
         env:
           TERM: xterm-256color
+          VERBOSE: true
           PLACEOS_SKIP_INSTALL_OPEN: true
           PLACE_EMAIL: robot@place.tech
           PLACE_PASSWORD: development
