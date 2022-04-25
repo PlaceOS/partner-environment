@@ -6,6 +6,7 @@ set -euo pipefail
 # Helpers
 ###################################################################################################
 
+PRODUCT="PlaceOS Partner Environment"
 PROMPT="░░░"
 
 # Colours
@@ -88,7 +89,7 @@ esac
 PLACEOS_HOME=${PLACEOS_HOME:-"${HOME}${SEPARATOR}.placeos"}
 PLACEOS_PARTNER_ENV_BRANCH=${PLACEOS_PARTNER_ENV_BRANCH:-"master"}
 
-prompt "Cloning PlaceOS Partner Environment <${PLACEOS_PARTNER_ENV_BRANCH}> into ${bold}${PLACEOS_HOME}${normal}..."
+prompt "Cloning ${PRODUCT} <${PLACEOS_PARTNER_ENV_BRANCH}> into ${bold}${PLACEOS_HOME}${normal}..."
 
 git clone --quiet --branch "${PLACEOS_PARTNER_ENV_BRANCH}" --depth=1 https://github.com/PlaceOS/partner-environment "${PLACEOS_HOME}"
 

@@ -589,7 +589,7 @@ Upgrades the ${PRODUCT}.
 If VERSION is omitted, defaults to the latest version.
 
 Arguments:
-    --list                  Lists versions of the Partner Environment.
+    --list                  Lists versions of the ${PRODUCT}.
     -q, --quiet             Do not write command logs to STDOUT.
     -h, --help              Display this message.
 EOF
@@ -757,8 +757,8 @@ Command:
     stop                    Stops the environment.
     task                    Runs a task in the environment.
     update                  Update the platform version.
-    upgrade                 Upgrade the Partner Environment.
-    uninstall               Uninstalls the Partner Environment.
+    upgrade                 Upgrade the ${PRODUCT}.
+    uninstall               Uninstalls the ${PRODUCT}.
     help                    Display this message.
 
 Arguments:
