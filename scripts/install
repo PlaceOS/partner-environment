@@ -11,6 +11,8 @@ PROMPT="░░░"
 # Colours
 red='\033[0;31m'
 green='\033[0;32m'
+bold='\033[1m'
+normal='\033[22m'
 reset='\033[0m'
 
 unknown_argument() (
@@ -86,7 +88,7 @@ esac
 PLACEOS_HOME=${PLACEOS_HOME:-"${HOME}${SEPARATOR}.placeos"}
 PLACEOS_PARTNER_ENV_BRANCH=${PLACEOS_PARTNER_ENV_BRANCH:-"master"}
 
-prompt "Cloning PlaceOS Partner Environment <${PLACEOS_PARTNER_ENV_BRANCH}> into ${PLACEOS_HOME}..."
+prompt "Cloning PlaceOS Partner Environment <${PLACEOS_PARTNER_ENV_BRANCH}> into ${bold}${PLACEOS_HOME}${normal}..."
 
 git clone --quiet --branch "${PLACEOS_PARTNER_ENV_BRANCH}" --depth=1 https://github.com/PlaceOS/partner-environment "${PLACEOS_HOME}"
 
@@ -98,7 +100,7 @@ installer_comment="# added by PlaceOS installer"
 profile_path_addition="export PATH=\"${PLACEOS_SCRIPTS}${PATH_SEPERATOR}\$PATH\" ${installer_comment}"
 
 if ! grep -q "$installer_comment$" "${PROFILE_PATH}"; then
-    prompt "Adding $PLACEOS_SCRIPTS to \$PATH..."
+    prompt "Adding ${bold}$PLACEOS_SCRIPTS${normal} to \$PATH in ${bold}${PROFILE_PATH}${normal}..."
     echo -e "$profile_path_addition" >>"${PROFILE_PATH}"
 fi
 
