@@ -44,6 +44,7 @@ jobs:
             https://raw.githubusercontent.com/PlaceOS/partner-environment/${{ github.sha }}/scripts/install
           )"
         env:
+          TERM: xterm-256color
           PLACEOS_SKIP_INSTALL_OPEN: true
           PLACE_EMAIL: robot@place.tech
           PLACE_PASSWORD: development
