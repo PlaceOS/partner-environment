@@ -789,6 +789,9 @@ update)
 upgrade)
     upgrade_environment "$@"
     ;;
+uninstall)
+    uninstall_environment "$@"
+    ;;
 task)
     task "$@"
     ;;
