@@ -76,6 +76,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Test initialization
+        if: ${{ matrix.version != '' }} # Testing a set tag
         run: ./placeos start --verbose
         env:
           PLACEOS_TAG: ${{ matrix.version }}
