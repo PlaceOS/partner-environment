@@ -1,6 +1,6 @@
-<img align="right" src="https://github.com/placeos.png?size=200" alt="PlaceOS" />
-
 # PlaceOS Partner Environment
+
+<img align="right" src="https://github.com/placeos.png?size=200" alt="PlaceOS" />
 
 [![CI](https://github.com/PlaceOS/partner-environment/actions/workflows/ci.yml/badge.svg)](https://github.com/PlaceOS/partner-environment/actions/workflows/ci.yml)
 
@@ -94,7 +94,7 @@ When finished, stop the environment's containers with `placeos stop`.
 ### `$ placeos`
 
 ```shell-session
-Usage: placeos [-h|--help] [command]
+Usage: placeos [-h|--help] [--version] [command]
 
 Helper script for interfacing with the PlaceOS Partner Environment.
 
@@ -106,7 +106,12 @@ Command:
     update                  Update the platform version.
     upgrade                 Upgrade the Partner Environment.
     uninstall               Uninstalls the Partner Environment.
+    version                 Render PlaceOS version in use.
     help                    Display this message.
+
+Arguments:
+    --version               Render PlaceOS version in use.
+    -h, --help              Display this message.
 ```
 
 ### `$ placeos start`
@@ -141,12 +146,12 @@ Arguments:
 ### `$ placeos task`
 
 ```shell-session
-Usage: placeos task [-h|--help|help] [-t|--task] <task> [help|...] [arguments...]
+Usage: placeos task [-h|--help|help] [--list] <task> [help|...] [arguments...]
 
 Run a task in the PlaceOS environment.
 
 Arguments:
-    -t, ---tasks            Display list of available tasks.
+    --list                  Display list of available tasks.
     -h, --help              Display this message.
 ```
 
