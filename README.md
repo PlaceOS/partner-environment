@@ -1,6 +1,6 @@
-<img align="right" src="https://github.com/placeos.png?size=200" alt="PlaceOS" />
-
 # PlaceOS Partner Environment
+
+<img align="right" src="https://github.com/placeos.png?size=200" alt="PlaceOS" />
 
 [![CI](https://github.com/PlaceOS/partner-environment/actions/workflows/ci.yml/badge.svg)](https://github.com/PlaceOS/partner-environment/actions/workflows/ci.yml)
 
