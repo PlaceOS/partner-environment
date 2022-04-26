@@ -1,182 +1,128 @@
-#! /usr/bin/env bash
+#!/usr/bin/env bash
 
-__placeos_comp() {
-    local cur_="${3-$cur}"
-    local possible="$(grep "^${cur_}"<<<${1})"
+PLACEOS_RELEASE_REPO="PlaceOS/PlaceOS"
+CALVER_FULL_REGEX='[0-9]+\.[0-9]{4}\.[0-9]+(-rc[0-9]+)?'
+CALVER_MONTH_REGEX='[0-9]+\.[0-9]{4}'
 
-    case "$cur_" in
-    --*=) ;;
+fetch_release_tags() (
+    git ls-remote https://github.com/${PLACEOS_RELEASE_REPO} |
+        cut -f2 |
+        grep '^refs/tags/' |
+        cut -d'/' -f3 |
+        sort --version-sort --reverse |
+        sed -E "s/($CALVER_FULL_REGEX|$CALVER_MONTH_REGEX)/placeos-\1/g"
+)
 
-    *)
-        local c i=0 IFS=$' \t\n'
-        for c in $possible; do
-            c="$c${4-}"
-            if [[ $c == "$cur_"* ]]; then
-                case $c in
-                --*=* | *.) ;;
-                *) c="$c " ;;
-                esac
-                COMPREPLY[i++]="${2-}$c"
-            fi
-        done
-        ;;
-    esac
-}
+PARTNER_ENV_REPO="placeos/partner-environment"
 
-_placeos_start() {
-    case "$cur" in
-    -*)
-        __placeos_comp "
-                -v
-                -h
-                --verbose
-                --help
-                --hard-reset
-                --email
-                --password
-                --domain
-                --application
-                --analytics
-                --kibana
-                "
-        return
-        ;;
-    esac
-}
+fetch_environment_tags() (
+    git ls-remote https://github.com/${PARTNER_ENV_REPO} |
+        cut -f2 |
+        grep --extended-regexp '^refs/tags/|HEAD' |
+        cut -d'/' -f3 |
+        sort --version-sort --reverse
+)
 
-_placeos_stop() {
-    case "$cur" in
-    -*)
-        __placeos_comp "
-                -v
-                -h
-                --verbose
-                --help
-                "
-        return
-        ;;
-    esac
-}
-
-_placeos_task() {
-    case "$cur" in
-    -*)
-        __placeos_comp "
-                -h
-                --help
-                -t
-                --tasks
-                "
-        return
-        ;;
-    *)
-        __placeos_comp "$(placeos task --tasks)"
-        return
-        ;;
-    esac
-}
-
-_placeos_update() {
-
-    case "$cur" in
-    -*)
-        __placeos_comp "
-                -h
-                --help
-                -v
-                --verbose
-                --list
-                "
-        return
-        ;;
-    *)
-        __placeos_comp "$(placeos update --list)"
-        return
-        ;;
-    esac
-}
-
-_placeos_upgrade() {
-    case "$cur" in
-    -*)
-        __placeos_comp "
-                -h
-                --help
-                -v
-                --verbose
-                --list
-                "
-        return
-        ;;
-    *)
-        __placeos_comp "$(placeos upgrade --list)"
-        return
-        ;;
-    esac
-}
-
-_placeos_uninstall() {
-    case "$cur" in
-    -*)
-        __placeos_comp "
-                -h
-                --help
-                --force
-                "
-        return
-        ;;
-    esac
-}
-
-# Plumbing
-###################################################################################################
+fetch_task_list() (
+    placeos task --list 2>/dev/null | grep --extended-regexp '^\w+[\: ].*\|' | sed -E 's/ +/ /g' | cut -d' ' -f1
+)
 
 _placeos() {
-    local cur prev opts
-
+    local cur prev
     COMPREPLY=()
     cur="${COMP_WORDS[COMP_CWORD]}"
-    prev="${COMP_WORDS[COMP_CWORD - 1]}"
-    words=("${COMP_WORDS[@]}")
-    cword=$COMP_CWORD
+    prev="${COMP_WORDS[COMP_CWORD-1]}"
 
-    echo $cur
-    echo $prev
-    echo $words
-
-    case ${COMP_CWORD} in
-    1)
-        __placeos_comp "
-          start
-          stop
-          update
-          upgrade
-          task
-        "
-        ;;
-    2)
-        case ${prev} in
-        -*) ;;
-
+    case "${prev}" in
+        placeos)
+            case "${cur}" in
+                -*)
+                    COMPREPLY=( $(compgen -W "
+                        -h --help
+                        " -- ${cur}) )
+                    ;;
+                *)
+                    COMPREPLY=( $(compgen -W "
+                        start
+                        stop
+                        task
+                        changelog
+                        update
+                        upgrade
+                        uninstall
+                        version
+                        help
+                        " -- ${cur}) )
+                    ;;
+            esac
+            ;;
         start)
-            _placeos_start
+            case ${cur} in
+                -*)
+                    COMPREPLY=( $(compgen -W "
+                        --email
+                        --password
+                        --application
+                        --domain
+                        --hard-reset
+                        -v --verbose
+                        -h --help
+                        " -- ${cur}) )
+                    ;;
+            esac
             ;;
         stop)
-            _placeos_stop
-            ;;
-        update)
-            _placeos_update
-            ;;
-        upgrade)
-            _placeos_upgrade
+            case ${cur} in
+                -*)
+                    COMPREPLY=( $(compgen -W "-v --verbose -h --help" -- ${cur}) )
+                    ;;
+            esac
             ;;
         task)
-            _placeos_task
+            case ${cur} in
+                -*)
+                    COMPREPLY=( $(compgen -W "--list -h --help" -- ${cur}) )
+                    ;;
+                *)
+                    COMPREPLY=( $(compgen -W "$(fetch_task_list)" -- ${cur}) )
+                    ;;
+            esac
             ;;
-        esac
-        ;;
+        changelog)
+            case ${cur} in
+                -*)
+                    COMPREPLY=( $(compgen -W "--full -h --help" -- ${cur}) )
+                    ;;
+            esac
+            ;;
+        update)
+            case ${cur} in
+                -*)
+                    COMPREPLY=( $(compgen -W "--restart -v --verbose -h --help" -- ${cur}) )
+                    ;;
+                *)
+                    COMPREPLY=( $(compgen -W "$(fetch_release_tags)" -- ${cur}) )
+                    ;;
+            esac
+            ;;
+        upgrade)
+            case ${cur} in
+                -*)
+                    COMPREPLY=( $(compgen -W "--list -q --quiet -h --help" -- ${cur}) )
+                    ;;
+                *)
+                    COMPREPLY=( $(compgen -W "$(fetch_environment_tags)" -- ${cur}) )
+                    ;;
+            esac
+            ;;
+        uninstall)
+            case ${cur} in
+                -*)
+                    COMPREPLY=( $(compgen -W "--force -h --help" -- ${cur}) )
+                    ;;
+            esac
+            ;;
     esac
-
     return 0
 }
 
