@@ -1,28 +1,6 @@
 #!/usr/bin/env bash
 
-PLACEOS_RELEASE_REPO="PlaceOS/PlaceOS"
-CALVER_FULL_REGEX='[0-9]+\.[0-9]{4}\.[0-9]+(-rc[0-9]+)?'
-CALVER_MONTH_REGEX='[0-9]+\.[0-9]{4}'
-
-fetch_release_tags() (
-    git ls-remote https://github.com/${PLACEOS_RELEASE_REPO} |
-        cut -f2 |
-        grep '^refs/tags/' |
-        cut -d'/' -f3 |
-        sort --version-sort --reverse |
-        sed -E "s/($CALVER_FULL_REGEX|$CALVER_MONTH_REGEX)/placeos-\1/g"
-)
-
-PARTNER_ENV_REPO="placeos/partner-environment"
-
-fetch_environment_tags() (
-    git ls-remote https://github.com/${PARTNER_ENV_REPO} |
-        cut -f2 |
-        grep --extended-regexp '^refs/tags/|HEAD' |
-        cut -d'/' -f3 |
-        sort --version-sort --reverse
-)
-
+# Tasks need some formatting.
 fetch_task_list() (
     placeos task --list 2>/dev/null | grep --extended-regexp '^\w+[\: ].*\|' | sed -E 's/ +/ /g' | cut -d' ' -f1
 )
@@ -98,10 +76,10 @@ _placeos() {
         update)
             case ${cur} in
                 -*)
-                    COMPREPLY=( $(compgen -W "--restart -v --verbose -h --help" -- ${cur}) )
+                    COMPREPLY=( $(compgen -W "--list --restart -v --verbose -h --help" -- ${cur}) )
                     ;;
                 *)
-                    COMPREPLY=( $(compgen -W "$(fetch_release_tags)" -- ${cur}) )
+                    COMPREPLY=( $(compgen -W "$(placeos update --list)" -- ${cur}) )
                     ;;
             esac
             ;;
@@ -111,7 +89,7 @@ _placeos() {
                     COMPREPLY=( $(compgen -W "--list -q --quiet -h --help" -- ${cur}) )
                     ;;
                 *)
-                    COMPREPLY=( $(compgen -W "$(fetch_environment_tags)" -- ${cur}) )
+                    COMPREPLY=( $(compgen -W "$(placeos upgrade --list)" -- ${cur}) )
                     ;;
             esac
             ;;
