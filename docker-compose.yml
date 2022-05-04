@@ -263,6 +263,7 @@ services:
       - *jwt-public-key-env
       - *secret-key-env
     environment:
+      <<: *opentelemetry-env
       <<: *redis-client-env
       SG_ENV: production
       STAFF_TIME_ZONE: $TZ
