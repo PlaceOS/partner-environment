@@ -41,10 +41,10 @@ load_environment() {
     set -o allexport
 
     # Load contents of .env
-    . "${base_path}/.env"
+    source "${base_path}/.env"
 
     # Overlay the existing environment
-    . "${ext_env}"
+    source "${ext_env}"
 
     # Conditional config for backwards compat
     if [[ $PLACEOS_TAG =~ ^placeos-[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
@@ -171,7 +171,7 @@ hard_reset() (
         "Failed to drop Elasticsearch indices."
 
     run_or_abort \
-        "docker-compose --project-directory='${base_path}' restart nginx" \
+        "docker-compose --env-file='/dev/null' --project-directory='${base_path}' restart nginx" \
         "Restarting nginx..." \
         "Failed to restart nginx." \
         "true"
@@ -344,8 +344,9 @@ start_environment() (
         "Generating secrets..." \
         "Failed to generate secrets."
 
+
     run_or_abort \
-        "docker-compose --project-directory='${base_path}' ${PROFILES} pull -q" \
+        "docker-compose --env-file='/dev/null' --project-directory='${base_path}' ${PROFILES} pull --quiet" \
         "Pulling images..." \
         "Failed to pull images."
 
@@ -357,7 +358,7 @@ start_environment() (
         "Failed to create user entity."
 
     run_or_abort \
-        "docker-compose --project-directory='${base_path}' ${PROFILES} up -d" \
+        "docker-compose --env-file='/dev/null' --project-directory='${base_path}' ${PROFILES} up --detach" \
         "Bringing up services..." \
         "Failed to start services."
 
@@ -407,7 +408,7 @@ stop_environment() (
     done
 
     run_or_abort \
-        "docker-compose --project-directory='${base_path}' down --remove-orphans" \
+        "docker-compose --env-file='/dev/null' --project-directory='${base_path}' down --remove-orphans" \
         "Tearing down $PLACEOS_PRODUCT" \
         "Failed to teardown $PLACEOS_PRODUCT"
 )
@@ -621,7 +622,7 @@ update_environment() (
 
     if [[ $restart_services == "true" ]]; then
         run_or_abort \
-            "docker-compose --project-directory='${base_path}' restart" \
+            "docker-compose --env-file='/dev/null' --project-directory='${base_path}' restart" \
             "Restarting services on ${version}..." \
             "Failed to restart services"
     fi
@@ -777,7 +778,7 @@ uninstall_environment() (
 
     # Stop environment and remove containers, volumes, and images.
     run_or_abort \
-        "docker-compose --project-directory='${base_path}' down --volumes --networks --rmi all" \
+        "docker-compose --env-file='/dev/null' --project-directory='${base_path}' down --volumes --networks --rmi all" \
         "Stopping ${PLACEOS_PRODUCT}..." \
         "Failed to stop ${PLACEOS_PRODUCT}"
 
