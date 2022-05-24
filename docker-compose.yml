@@ -16,6 +16,8 @@ volumes:
   postgres-data:
   redis-data:
   rethink-data:
+  core-repositories:
+  core-drivers:
   www:
 
 # YAML Anchors
@@ -171,6 +173,13 @@ services:
       - etcd
       - redis
       - rethink
+    volumes:
+      - type: volume
+        source: core-repositories
+        target: /app/repositories/
+      - type: volume
+        source: core-drivers
+        target: /app/bin/drivers/
     <<: *cap-drop
     env_file:
       - *secret-key-env
