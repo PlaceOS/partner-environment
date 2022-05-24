@@ -16,7 +16,7 @@ volumes:
   postgres-data:
   redis-data:
   rethink-data:
-  core-repos:
+  core-repositories:
   core-drivers:
   www:
 
@@ -156,7 +156,7 @@ services:
       - rethink
     volumes:
       - type: volume
-        source: core-repos
+        source: core-repositories
         target: /app/repositories/
       - type: volume
         source: core-drivers
