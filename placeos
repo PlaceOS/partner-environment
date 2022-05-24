@@ -40,39 +40,8 @@ ensure_env_files() (
 )
 
 # This functions mutates the outer scope, hence {} are used
-load_environment() {
-    # Save the existing environment
-    ext_env=$(mktemp)
-    export -p >"${ext_env}"
-    set -o allexport
-
-    # Load contents of .env
-    source "${base_path}/.env"
-
-    # Overlay the existing environment
-    source "${ext_env}"
-
-    # Conditional config for backwards compat
-    if [[ $PLACEOS_TAG =~ ^placeos-[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-
-        if [[ $PLACEOS_TAG < "placeos-1.2108.2" ]]; then
-            export PLACE_STAFF_API_TAG="nightly"
-            export PLACE_NGINX_TAG="staff-api"
-        fi
-
-        if [[ $PLACEOS_TAG < "placeos-1.2109.0" ]]; then
-            export PLACE_FRONTEND_LOADER_IMAGE="frontends"
-        fi
-
-        if [[ $PLACEOS_TAG < "placeos-1.2111.0" ]]; then
-            export PLACE_SEARCH_INGEST_IMAGE="rubber-soul"
-        fi
-    fi
-
-    # Cleanup
-    set +o allexport
-    rm "${ext_env}"
-    unset ext_env
+load_environment () {
+    eval "$("${base_path}/scripts/shdotenv" --dialect ruby --env .env)"
 }
 
 # Path of directory containing the script
