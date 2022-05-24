@@ -41,7 +41,7 @@ ensure_env_files() (
 
 # This functions mutates the outer scope, hence {} are used
 load_environment () {
-    eval "$("${base_path}/scripts/shdotenv" --dialect ruby --env .env)"
+    eval "$("${base_path}/scripts/shdotenv" --dialect ruby --env "${base_path}/.env")"
 }
 
 # Path of directory containing the script
