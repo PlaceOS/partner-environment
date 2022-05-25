@@ -43,8 +43,10 @@ ensure_env_files() (
 load_environment () {
     eval "$("${base_path}/scripts/shdotenv" --dialect ruby --env "${base_path}/.env")"
 
-    # Default to `latest` if no PLACEOS_TAG in the environment
-    PLACEOS_TAG=${PLACEOS_TAG:-latest}
+    # Defaults (in case of no presence `.env`)
+    PLACEOS_TAG=${PLACEOS_TAG:-"latest"}
+    ENABLE_ANALYTICS=${ENABLE_ANALYTICS:-"false"}
+    ENABLE_KIBANA=${ENABLE_KIBANA:-"false"}
 }
 
 # Path of directory containing the script

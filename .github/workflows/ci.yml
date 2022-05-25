@@ -34,13 +34,14 @@ jobs:
           PLACE_PASSWORD: development
 
   test-bare-start:
-    name: "Start with no `.env`"
+    name: "Start with an empty `.env`"
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
       - name: Test initialization
         run: |
           rm .env
+          touch .env
           ./placeos start --verbose
           docker-compose down
       - name: Test raw `docker-compose`
