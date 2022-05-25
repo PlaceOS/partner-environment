@@ -42,6 +42,9 @@ ensure_env_files() (
 # This functions mutates the outer scope, hence {} are used
 load_environment () {
     eval "$("${base_path}/scripts/shdotenv" --dialect ruby --env "${base_path}/.env")"
+
+    # Default to `latest` if no PLACEOS_TAG in the environment
+    PLACEOS_TAG=${PLACEOS_TAG:-latest}
 }
 
 # Path of directory containing the script
