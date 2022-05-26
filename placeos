@@ -42,11 +42,6 @@ ensure_env_files() (
 # This functions mutates the outer scope, hence {} are used
 load_environment () {
     eval "$("${base_path}/scripts/shdotenv" --dialect ruby --env "${base_path}/.env")"
-
-    # Defaults (in case of no presence `.env`)
-    PLACEOS_TAG=${PLACEOS_TAG:-"latest"}
-    ENABLE_ANALYTICS=${ENABLE_ANALYTICS:-"false"}
-    ENABLE_KIBANA=${ENABLE_KIBANA:-"false"}
 }
 
 # Path of directory containing the script

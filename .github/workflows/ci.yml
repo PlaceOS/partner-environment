@@ -33,22 +33,6 @@ jobs:
           PLACE_EMAIL: robot@place.tech
           PLACE_PASSWORD: development
 
-  test-bare-start:
-    name: "Start with an empty `.env`"
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - name: Test initialization
-        run: |
-          rm .env
-          touch .env
-          ./placeos start --verbose
-          docker-compose down
-      - name: Test raw `docker-compose`
-        run: |
-          docker-compose up -d
-          docker-compose down
-
   test-start:
     name: "Start ${{ !matrix.stable && '🚧 ' || '' }}- version: ${{ matrix.version != '' && matrix.version || 'empty'}}, os: ${{ matrix.os }}"
     runs-on: ${{ matrix.os }}
