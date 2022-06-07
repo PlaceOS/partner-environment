@@ -85,6 +85,6 @@ jobs:
         run: docker-compose ps
       - name: Check API is reachable
         continue-on-error: true
-        run: curl --retry 10 --insecure -fsSL https://localhost:8443/api/engine/v2
+        run: curl -S --retry 10 --tls-max 1 --insecure https://localhost:8443/api/engine/v2
       - name: Test raw `docker-compose`
         run: docker-compose down
