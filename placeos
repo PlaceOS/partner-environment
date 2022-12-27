@@ -13,7 +13,8 @@ PLACEOS_PRODUCT="PlaceOS Local"
 # Whether to write to STDOUT or not
 VERBOSE="${VERBOSE:-"false"}"
 
-EMPTY_FILE="$(touch /tmp/placeos-empty-env; echo "/tmp/placeos-empty-env")"
+#EMPTY_FILE="$(touch /tmp/placeos-empty-env; echo "/tmp/placeos-empty-env")"
+EMPTY_FILE="$(cp .env /tmp/placeos-empty-env; echo "/tmp/placeos-empty-env")"
 
 cleanup() (
     rm "$EMPTY_FILE" || true
@@ -136,8 +137,8 @@ hard_reset() (
 
     run_or_abort \
         "${base_path}/scripts/run-sam-task drop:db" \
-        "Dropping RethinkDB tables..." \
-        "Failed to drop RethinkDB tables."
+        "Dropping PostgreSQL tables..." \
+        "Failed to drop PostgreSQL tables."
 
     run_or_abort \
         "${base_path}/scripts/run-sam-task drop:elastic" \
@@ -323,6 +324,12 @@ start_environment() (
         "docker-compose --env-file='${EMPTY_FILE}' --project-directory='${base_path}' ${PROFILES} pull --quiet" \
         "Pulling images..." \
         "Failed to pull images."
+
+    run_or_abort \
+        "${base_path}/scripts/run-sam-task db:init host=$PG_HOST port=$PG_PORT db=$PG_DB user=$POSTGRES_USER password=$POSTGRES_PASSWORD" \
+        "Initializing PostgreSQL database by running migration scripts..." \
+        "Failed to init PostgreSQL database."
+
 
     [ ${hard_reset} == "true" ] && hard_reset
 

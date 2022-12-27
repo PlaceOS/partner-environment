@@ -15,7 +15,6 @@ volumes:
   nginx-data:
   postgres-data:
   redis-data:
-  rethink-data:
   core-repositories:
   core-drivers:
   www:
@@ -81,10 +80,15 @@ x-place-loader-client-env: &place-loader-client-env
 x-redis-client-env: &redis-client-env
   REDIS_URL: ${REDIS_URL:-redis://redis:6379}
 
-x-rethinkdb-client-env: &rethinkdb-client-env
-  RETHINKDB_HOST: ${RETHINKDB_HOST:-rethink}
-  RETHINKDB_PORT: ${RETHINKDB_PORT:-28015}
-  RETHINKDB_DB: ${RETHINKDB_DB:-place_development}
+x-postgresdb-client-env: &postgresdb-client-env
+  PG_HOST: ${PG_HOST:-postgres}
+  PG_PORT: ${PG_PORT:-5432}
+  PG_DB: ${PG_DB:-place_development}
+  PG_USER: ${POSTGRES_USER:-postgres}
+  PG_PASSWORD: ${POSTGRES_PASSWORD:-password}
+  PG_DATABASE: ${PG_DB:-place_development}
+  PG_DATABASE_URL: ${PG_DATABASE_URL:-postgresql://placeos:development@postgres:5432/place_development}
+
 
 x-search-ingest-client-env: &search-ingest-client-env
   PLACE_SEARCH_INGEST_URI: ${PLACE_SEARCH_INGEST_URI:-http://search-ingest:3000}
@@ -113,7 +117,7 @@ services:
   # Services
 
   rest-api: # Rest API
-    image: ${PLACE_REST_API_REGISTRY:-docker.io}/placeos/rest-api:${PLACE_REST_API_TAG:-latest}
+    image: ${PLACE_REST_API_REGISTRY:-ghcr.io}/placeos/rest-api:${PLACE_REST_API_TAG:-latest}
     restart: always
     container_name: rest-api
     hostname: api # Retained as nginx upstream is `api`
@@ -124,7 +128,7 @@ services:
       - elastic
       - etcd
       - redis
-      - rethink
+      - postgres
       - search-ingest
     <<: *cap-drop
     env_file:
@@ -138,11 +142,11 @@ services:
       <<: *etcd-client-env
       <<: *place-loader-client-env
       <<: *redis-client-env
-      <<: *rethinkdb-client-env
+      <<: *postgresdb-client-env
       <<: *search-ingest-client-env
 
   auth: # Authentication Service
-    image: ${PLACE_AUTH_REGISTRY:-docker.io}/placeos/auth:${PLACE_AUTH_TAG:-latest}
+    image: ${PLACE_AUTH_REGISTRY:-ghcr.io}/placeos/auth:${PLACE_AUTH_TAG:-latest}
     restart: always
     container_name: auth
     hostname: auth
@@ -150,20 +154,20 @@ services:
     <<: *std-logging
     depends_on:
       - redis
-      - rethink
+      - postgres
     <<: *cap-drop
     env_file:
       - *secret-key-env
     environment:
       <<: *opentelemetry-env
-      <<: *rethinkdb-client-env
+      <<: *postgresdb-client-env
       <<: *redis-client-env
       COAUTH_NO_SSL: "true"
       TZ: $TZ
       PLACE_URI: https://${PLACE_DOMAIN:-localhost:8443}
 
   core: # Module coordinator
-    image: ${PLACE_CORE_REGISTRY:-docker.io}/placeos/core:${PLACE_CORE_TAG:-latest}
+    image: ${PLACE_CORE_REGISTRY:-ghcr.io}/placeos/core:${PLACE_CORE_TAG:-latest}
     init: true # An init process prevents leaking of PlaceOS Driver processes
     restart: always
     container_name: core
@@ -173,7 +177,7 @@ services:
     depends_on:
       - etcd
       - redis
-      - rethink
+      - postgres
     volumes:
       - type: volume
         source: core-repositories
@@ -195,10 +199,10 @@ services:
       # Service Hosts
       <<: *etcd-client-env
       <<: *redis-client-env
-      <<: *rethinkdb-client-env
+      <<: *postgresdb-client-env
 
   edge: # Module coordinator
-    image: ${PLACE_EDGE_REGISTRY:-docker.io}/placeos/edge:${PLACE_EDGE_TAG:-latest}
+    image: ${PLACE_EDGE_REGISTRY:-ghcr.io}/placeos/edge:${PLACE_EDGE_TAG:-latest}
     restart: "no"
     container_name: edge
     hostname: edge
@@ -212,7 +216,7 @@ services:
       <<: *edge-env
 
   frontend-loader: # Frontend deployment service
-    image: ${PLACE_FRONTEND_LOADER_REGISTRY:-docker.io}/placeos/${PLACE_FRONTEND_LOADER_IMAGE:-frontend-loader}:${PLACE_FRONTEND_LOADER_TAG:-latest}
+    image: ${PLACE_FRONTEND_LOADER_REGISTRY:-ghcr.io}/placeos/${PLACE_FRONTEND_LOADER_IMAGE:-frontend-loader}:${PLACE_FRONTEND_LOADER_TAG:-latest}
     restart: always
     container_name: frontend-loader
     hostname: frontend-loader
@@ -223,7 +227,7 @@ services:
         source: www
         target: /app/www
     depends_on:
-      - rethink
+      - postgres
     <<: *cap-drop
     env_file:
       - *secret-key-env
@@ -231,11 +235,11 @@ services:
       <<: *deployment-env
       <<: *opentelemetry-env
       # Service Hosts
-      <<: *rethinkdb-client-env
+      <<: *postgresdb-client-env
       PLACE_LOADER_WWW: www
 
   source:
-    image: ${PLACE_SOURCE_REGISTRY:-docker.io}/placeos/source:${PLACE_SOURCE_TAG:-latest}
+    image: ${PLACE_SOURCE_REGISTRY:-ghcr.io}/placeos/source:${PLACE_SOURCE_TAG:-latest}
     profiles:
       - analytics
     restart: always
@@ -246,7 +250,7 @@ services:
     depends_on:
       - influxdb
       - redis
-      - rethink
+      - postgres
     <<: *cap-drop
     env_file:
       - *influxdb-api-key
@@ -257,10 +261,10 @@ services:
       # Service Hosts
       <<: *influxdb-client-env
       <<: *redis-client-env
-      <<: *rethinkdb-client-env
+      <<: *postgresdb-client-env
 
   triggers: # Conditional execution service
-    image: ${PLACE_TRIGGERS_REGISTRY:-docker.io}/placeos/triggers:${PLACE_TRIGGERS_TAG:-latest}
+    image: ${PLACE_TRIGGERS_REGISTRY:-ghcr.io}/placeos/triggers:${PLACE_TRIGGERS_TAG:-latest}
     restart: always
     container_name: triggers
     hostname: triggers
@@ -270,7 +274,7 @@ services:
       - core
       - etcd
       - redis
-      - rethink
+      - postgres
     <<: *cap-drop
     env_file:
       - *secret-key-env
@@ -280,7 +284,7 @@ services:
       # Service Hosts
       <<: *etcd-client-env
       <<: *redis-client-env
-      <<: *rethinkdb-client-env
+      <<: *postgresdb-client-env
       <<: *smtp-client-env
 
   staff-api: # Staff API
@@ -300,23 +304,25 @@ services:
     environment:
       <<: *opentelemetry-env
       <<: *redis-client-env
+      <<: *postgresdb-client-env
       SG_ENV: production
       STAFF_TIME_ZONE: $TZ
-      PG_DATABASE_URL: "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres/placeos"
+      #PG_DATABASE_URL: "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres/$P"
       PLACE_URI: "https://nginx"
       SSL_VERIFY_NONE: "true"
 
   # Support
 
   init:
-    image: ${PLACE_INIT_REGISTRY:-docker.io}/placeos/init:${PLACE_INIT_TAG:-latest}
+    image: ${PLACE_INIT_REGISTRY:-ghcr.io}/placeos/init:${PLACE_INIT_TAG:-latest}
     container_name: init
     restart: on-failure
     <<: *std-network
     <<: *std-logging
     depends_on:
-      - rethink
-      - search-ingest
+      postgres:
+        condition: service_healthy
+      #- search-ingest
     <<: *cap-drop
     env_file:
       - *secret-key-env
@@ -332,11 +338,11 @@ services:
       PLACE_PASSWORD: ${PLACE_PASSWORD:-development}
       PLACE_TLS: "${PLACE_TLS:-true}"
       # Service Hosts
-      <<: *rethinkdb-client-env
+      <<: *postgresdb-client-env
       <<: *elastic-client-env
 
-  search-ingest: # RethinkDB to Elasticsearch Service
-    image: ${PLACE_SEARCH_INGEST_REGISTRY:-docker.io}/placeos/${PLACE_SEARCH_INGEST_IMAGE:-search-ingest}:${PLACE_SEARCH_INGEST_TAG:-latest}
+  search-ingest: # PostgreSQL to Elasticsearch Service
+    image: ${PLACE_SEARCH_INGEST_REGISTRY:-ghcr.io}/placeos/${PLACE_SEARCH_INGEST_IMAGE:-search-ingest}:${PLACE_SEARCH_INGEST_TAG:-latest}
     restart: always
     container_name: *search-ingest-service
     hostname: *search-ingest-service
@@ -344,17 +350,17 @@ services:
     <<: *std-logging
     depends_on:
       - elastic
-      - rethink
+      - postgres
     <<: *cap-drop
     environment:
       <<: *deployment-env
       <<: *opentelemetry-env
      # Service Hosts
-      <<: *rethinkdb-client-env
+      <<: *postgresdb-client-env
       <<: *elastic-client-env
 
   dispatch: # Engine driver server registration and data routing
-    image: ${PLACE_DISPATCH_REGISTRY:-docker.io}/placeos/dispatch:${PLACE_DISPATCH_TAG:-latest}
+    image: ${PLACE_DISPATCH_REGISTRY:-ghcr.io}/placeos/dispatch:${PLACE_DISPATCH_TAG:-latest}
     restart: always
     container_name: dispatch
     hostname: dispatch
@@ -368,7 +374,7 @@ services:
 
   # Resources
 
-  postgres: # Database used by Staff API
+  postgres: # Database used by PgORM Models
     image: postgres:${POSTGRES_VERSION:-13-alpine}
     container_name: postgres
     hostname: postgres
@@ -386,6 +392,9 @@ services:
       TZ: $TZ
       POSTGRES_USER: $POSTGRES_USER
       POSTGRES_PASSWORD: $POSTGRES_PASSWORD
+      POSTGRES_DB: $PG_DB
+    ports:
+        - "5432:5432"
 
   elastic:
     image: elasticsearch:${ELASTIC_VERSION:-7.17.6}
@@ -535,23 +544,6 @@ services:
       - type: volume
         source: redis-data
         target: /data
-    environment:
-      TZ: $TZ
-
-  rethink:
-    image: rethinkdb:${RETHINKDB_VERSION:-2.4}
-    restart: always
-    container_name: rethink
-    hostname: rethink
-    healthcheck:
-      # Check if the DB's port is open
-      test: "bash -c ': &>/dev/null </dev/tcp/127.0.0.1/28015'"
-    <<: *std-network
-    <<: *std-logging
-    volumes:
-      - type: volume
-        source: rethink-data
-        target: /data/rethinkdb_data
     environment:
       TZ: $TZ
 
