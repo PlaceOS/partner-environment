@@ -13,8 +13,7 @@ PLACEOS_PRODUCT="PlaceOS Local"
 # Whether to write to STDOUT or not
 VERBOSE="${VERBOSE:-"false"}"
 
-#EMPTY_FILE="$(touch /tmp/placeos-empty-env; echo "/tmp/placeos-empty-env")"
-EMPTY_FILE="$(cp .env /tmp/placeos-empty-env; echo "/tmp/placeos-empty-env")"
+EMPTY_FILE="$(touch /tmp/placeos-empty-env; echo "/tmp/placeos-empty-env")"
 
 cleanup() (
     rm "$EMPTY_FILE" || true
