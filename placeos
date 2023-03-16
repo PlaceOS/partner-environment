@@ -325,12 +325,6 @@ start_environment() (
         "Pulling images..." \
         "Failed to pull images."
 
-    run_or_abort \
-        "${base_path}/scripts/run-sam-task db:init host=$PG_HOST port=$PG_PORT db=$PG_DB user=$POSTGRES_USER password=$POSTGRES_PASSWORD" \
-        "Initializing PostgreSQL database by running migration scripts..." \
-        "Failed to init PostgreSQL database."
-
-
     [ ${hard_reset} == "true" ] && hard_reset
 
     run_or_abort \
