@@ -145,6 +145,10 @@ services:
       <<: *redis-client-env
       <<: *postgresdb-client-env
       <<: *search-ingest-client-env
+    deploy:
+      resources:
+        limits:
+          memory: "2g"
 
   auth: # Authentication Service
     image: ${PLACE_AUTH_REGISTRY:-docker.io}/placeos/auth:${PLACE_AUTH_TAG:-latest}
@@ -166,6 +170,10 @@ services:
       COAUTH_NO_SSL: "true"
       TZ: $TZ
       PLACE_URI: https://${PLACE_DOMAIN:-localhost:8443}
+    deploy:
+      resources:
+        limits:
+          memory: "500m"
 
   core: # Module coordinator
     image: ${PLACE_CORE_REGISTRY:-docker.io}/placeos/core:${PLACE_CORE_TAG:-latest}
@@ -201,6 +209,10 @@ services:
       <<: *etcd-client-env
       <<: *redis-client-env
       <<: *postgresdb-client-env
+    deploy:
+      resources:
+        limits:
+          memory: "4g"
 
   edge: # Module coordinator
     image: ${PLACE_EDGE_REGISTRY:-docker.io}/placeos/edge:${PLACE_EDGE_TAG:-latest}
@@ -215,6 +227,10 @@ services:
     environment:
       <<: *deployment-env
       <<: *edge-env
+    deploy:
+      resources:
+        limits:
+          memory: "2g"
 
   frontend-loader: # Frontend deployment service
     image: ${PLACE_FRONTEND_LOADER_REGISTRY:-docker.io}/placeos/${PLACE_FRONTEND_LOADER_IMAGE:-frontend-loader}:${PLACE_FRONTEND_LOADER_TAG:-latest}
@@ -238,6 +254,10 @@ services:
       # Service Hosts
       <<: *postgresdb-client-env
       PLACE_LOADER_WWW: www
+    deploy:
+      resources:
+        limits:
+          memory: "500m"
 
   source:
     image: ${PLACE_SOURCE_REGISTRY:-docker.io}/placeos/source:${PLACE_SOURCE_TAG:-latest}
@@ -263,6 +283,10 @@ services:
       <<: *influxdb-client-env
       <<: *redis-client-env
       <<: *postgresdb-client-env
+    deploy:
+      resources:
+        limits:
+          memory: "500m"
 
   triggers: # Conditional execution service
     image: ${PLACE_TRIGGERS_REGISTRY:-docker.io}/placeos/triggers:${PLACE_TRIGGERS_TAG:-latest}
@@ -287,6 +311,10 @@ services:
       <<: *redis-client-env
       <<: *postgresdb-client-env
       <<: *smtp-client-env
+    deploy:
+      resources:
+        limits:
+          memory: "250m"
 
   staff-api: # Staff API
     image: ${PLACE_STAFF_API_REGISTRY:-docker.io}/placeos/staff-api:${PLACE_STAFF_API_TAG:-latest}
@@ -311,6 +339,10 @@ services:
       #PG_DATABASE_URL: "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres/$P"
       PLACE_URI: "https://nginx"
       SSL_VERIFY_NONE: "true"
+    deploy:
+      resources:
+        limits:
+          memory: "2g"
 
   # Support
 
@@ -361,6 +393,10 @@ services:
      # Service Hosts
       <<: *postgresdb-client-env
       <<: *elastic-client-env
+    deploy:
+      resources:
+        limits:
+          memory: "250m"
 
   dispatch: # Engine driver server registration and data routing
     image: ${PLACE_DISPATCH_REGISTRY:-docker.io}/placeos/dispatch:${PLACE_DISPATCH_TAG:-latest}
@@ -374,6 +410,10 @@ services:
       - *secret-key-env
     <<: *std-network
     <<: *std-logging
+    deploy:
+      resources:
+        limits:
+          memory: "250m"
 
   # Resources
 
@@ -396,8 +436,10 @@ services:
       POSTGRES_USER: $POSTGRES_USER
       POSTGRES_PASSWORD: $POSTGRES_PASSWORD
       POSTGRES_DB: $PG_DB
-    ports:
-        - "5432:5432"
+    deploy:
+      resources:
+        limits:
+          memory: "4g"
 
   elastic:
     image: elasticsearch:${ELASTIC_VERSION:-7.17.6}
@@ -418,6 +460,10 @@ services:
       cluster.routing.allocation.disk.threshold_enabled: "false"
       discovery.type: single-node
       TZ: $TZ
+    deploy:
+      resources:
+        limits:
+          memory: "2g"
 
   etcd:
     image: quay.io/coreos/etcd:${ETCD_VERSION:-v3.5.4}
@@ -439,6 +485,10 @@ services:
       ETCD_INITIAL_CLUSTER=etcd: "http://etcd:2380"
       ETCD_INITIAL_CLUSTER_STATE: "new"
       TZ: $TZ
+    deploy:
+      resources:
+        limits:
+          memory: "1g"
 
   influxdb:
     image: influxdb:${INFLUXDB_IMAGE_TAG:-2.0.8-alpine}
@@ -456,6 +506,10 @@ services:
         source: influx-data
         target: /root/.influxdbv2
     command: "--reporting-disabled"
+    deploy:
+      resources:
+        limits:
+          memory: "1g"
 
   chronograf:
     image: chronograf:${CHRONOGRAF_IMAGE_TAG:-1.9}
@@ -484,6 +538,10 @@ services:
       GENERIC_SCOPES: "public"
       GENERIC_NAME: "PlaceOS"
       PUBLIC_URL: "https://${PLACE_DOMAIN}"
+    deploy:
+      resources:
+        limits:
+          memory: "250m"
 
   mosquitto:
     image: iegomez/mosquitto-go-auth:${MOSQUITTO_IMAGE_TAG:-latest}
@@ -500,6 +558,10 @@ services:
       - ${PWD}/config/mosquitto/mosquitto.conf:/etc/mosquitto/mosquitto.conf
     environment:
       TZ: $TZ
+    deploy:
+      resources:
+        limits:
+          memory: "250m"
 
   nginx:
     image: ${PLACE_NGINX_REGISTRY:-docker.io}/placeos/nginx:${PLACE_NGINX_TAG:-latest}
@@ -533,6 +595,10 @@ services:
     environment:
       TZ: $TZ
       PLACE_DOMAIN: ${PLACE_DOMAIN:-localhost:8443}
+    deploy:
+      resources:
+        limits:
+          memory: "250m"
 
   redis:
     image: eqalpha/keydb
@@ -549,6 +615,10 @@ services:
         target: /data
     environment:
       TZ: $TZ
+    deploy:
+      resources:
+        limits:
+          memory: "250m"
 
   # Aggregates logs and forwards them to Elasticsearch.
   logstash:
