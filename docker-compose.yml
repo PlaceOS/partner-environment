@@ -321,7 +321,6 @@ services:
     depends_on:
       - rest-api
       - postgres
-      - nginx
     <<: *cap-drop
     env_file:
       - *jwt-public-key-env
