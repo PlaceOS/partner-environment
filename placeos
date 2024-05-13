@@ -175,6 +175,7 @@ start_environment() (
     hard_reset=false
     enable_analytics=false
     enable_kibana=false
+    enable_lgtm=false
     email_argument=""
     password_argument=""
     domain_argument=""
@@ -215,6 +216,9 @@ start_environment() (
             ;;
         --kibana)
             enable_kibana=true
+            ;;
+        --lgtm)
+            enable_lgtm=true
             ;;
         -v | --verbose)
             VERBOSE="true"
@@ -311,6 +315,11 @@ start_environment() (
         if [[ $(uname) == "Linux" ]]; then
             PROFILES+=" --profile metricbeat"
         fi
+    fi
+
+    if [[ $ENABLE_LGTM == "true" ]] || [[ $enable_lgtm == "true" ]]; then
+        PROFILES+=" --profile lgtm"
+        export LOG_FORMAT=JSON
     fi
 
     run_or_abort \
