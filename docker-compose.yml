@@ -40,7 +40,7 @@ x-cap-drop: &cap-drop
     - SYS_CHROOT       # Use chroot(2), change root directory.
 
 x-deployment-env: &deployment-env
-  PLACE_LOG_FORMAT: ${LOG_FORMAT:-LINE}
+  PLACE_LOG_FORMAT: ${LOG_FORMAT:-JSON}
   LOG_LEVEL: ${LOG_LEVEL:-warn}
   ENV: ${ENV:-development}
   SG_ENV: ${SG_ENV:-development}
