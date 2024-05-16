@@ -41,7 +41,14 @@ scrape_configs:
             source: source
             message: message
             exception: exception
-          drop_malformed: true
+          drop_malformed: false
+      - multiline:
+          # Identify timestamps as first line of a multiline block. Enclose the string in single quotes.
+          firstline: '^\[\d{4}-\d{2}-\d{2} \d{1,2}:\d{2}:\d{2}\]'
+          max_wait_time: 3s
+      - regex:
+          # Flag (?s:.*) needs to be set for regex stage to capture full traceback log in the extracted map.
+          expression: '^(?P<time>\[\d{4}-\d{2}-\d{2} \d{1,2}:\d{2}:\d{2}\]) (?P<message>(?s:.*))$'
       - labels:
           level:
           program:
@@ -52,3 +59,4 @@ scrape_configs:
       - timestamp:
           format: RFC3339
           source: time
+
