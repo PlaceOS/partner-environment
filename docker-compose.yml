@@ -485,9 +485,15 @@ services:
         source: www
         target: /etc/nginx/html/
         read_only: true
-      - type: volume
-        source: nginx-data
-        target: /etc/nginx/ssl
+      # # Option 1: Use self signed certs that are automatically generated when the nginx container starts:  
+      # - type: volume
+      #   source: nginx-data
+      #   target: /etc/nginx/ssl
+      # # Option 2: Place these 3 files in ./ssl/, which are mounted into the nginx container (as per https://github.com/PlaceOS/nginx/blob/main/config/nginx.conf.template#L37-L42)
+      # `docker logs nginx` to see any errors if the nginx container fails to start.
+      - ./ssl/fullchain.pem:/etc/nginx/ssl/default-domain/fullchain.pem
+      - ./ssl/privkey.pem:/etc/nginx/ssl/default-domain/privkey.pem
+      - ./ssl/dhparam.pem:/etc/nginx/ssl/dhparam.pem
     env_file:
       - *secret-key-env
       - *jwt-public-key-env
